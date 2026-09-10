@@ -10,7 +10,13 @@ The next release separates `Design estimate`, `Demo simulation`, `Mock adapter`,
 
 Cost display now preserves exact zero as `$0.00`, displays positive sub-cent values with four decimal places, reports missing pricing as `Pricing unavailable`, and reports deterministic no-model-call work as `Not applicable`. The release evidence must be regenerated from the post-correction commit; older screenshots remain historical evidence only.
 
-Implementation commit: `80115a20127002538dcdc51ba60ade75679fe24d`. Evidence-only packaging may follow; every release-candidate manifest entry records this implementation commit.
+## Restored product journey
+
+The workspace now exposes AI suitability, selectable Low-code/Pro-code/Hybrid build paths, and a Build Kit handoff in addition to the existing workload, workflow, scenario, prompt, controlled-test, and blueprint surfaces. Build-path selection is persisted in project state and the generated Build Kit includes the selected path, workflow, economics, and ownership boundaries.
+
+The recommended Balanced policy provides better cost-to-value than the baseline because it uses deterministic routing for high-confidence work, filtered retrieval, prompt caching, schema validation, and escalation only for ambiguous or consequential cases. Baseline applies an advanced model and broad context to every applicable task; Assurance adds stronger validation and review at higher cost; Economy is cheaper but accepts higher review coverage and less reasoning depth. The recommendation is policy-derived rather than a target saving.
+
+Implementation commit: `acfcaf5d5f17c6c865ac790e639482b8529a0f47`. Pages workflow: `34450487416` (successful). The deployed public URL is `https://amit1858.github.io/buildwise-ai-value-architect/`.
 
 This report describes the current repository state. Demo figures, browser evidence, and the golden-value contract are generated from the same canonical calculation engine in `lib/buildwise.ts`.
 
@@ -77,7 +83,7 @@ npm run build:pages
 npx playwright test tests/evidence.spec.ts --reporter=line
 ```
 
-Results for implementation commit `80115a20127002538dcdc51ba60ade75679fe24d`: TypeScript passed; ESLint passed; 5 Vitest files / 15 tests passed; production build passed; static Pages build passed; full-app and static-export journeys passed; dark-theme evidence was captured at all requested viewports.
+Results for deployed source commit `acfcaf5d5f17c6c865ac790e639482b8529a0f47`: TypeScript passed; ESLint passed; 7 Vitest files / 21 tests passed; static Pages build passed; deployed Playwright evidence journey passed at 1440x1000, 1280x900, 834x1112, and 390x844.
 
 The release-candidate evidence manifest records full local URLs, themes, provenance modes, build identifiers, source commit, and capture source. It is packaged under `BuildWiseArtifacts/release-candidate/`.
 
@@ -98,3 +104,4 @@ Live provider execution remains unverified until a user supplies a provider endp
 - `RELEASE_EVIDENCE_AUDIT.md` records the pre-correction source audit.
 - `STATIC_EXPORT_VALIDATION.md` records the repository-base-path static journey.
 - `DEPLOYMENT_EVIDENCE.md` records the GitHub Actions and public-URL limitation.
+- `deployment-evidence/DEPLOYMENT_EVIDENCE.md` records the successful public verification for the restoration tranche.

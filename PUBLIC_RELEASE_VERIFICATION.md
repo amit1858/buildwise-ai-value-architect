@@ -1,6 +1,6 @@
 # Public release verification
 
-**Status:** Historical baseline; the next verification run must replace this record after the truthfulness correction is deployed.
+**Status:** Verified against the deployed GitHub Pages site after the truthfulness correction and restoration tranche.
 
 ## Evidence lineage
 
@@ -11,6 +11,7 @@
 | Public evidence package | `c5cb93865468010fba1c187c6ed86d4ef8d92055` | `34432491514` | Browser and security evidence |
 | Metadata/report update | `8b3263157f4d13afebcc71c230425e08ab860a6e` | `34432576577` | Deployment metadata |
 | Truthfulness correction | Pending | Pending | New provenance labels, cost formatting, and public controls |
+| Restoration tranche | `acfcaf5d5f17c6c865ac790e639482b8529a0f47` | `34450487416` | Suitability, build paths, Build Kit routes, truthful public controls |
 
 ## Release identity
 
@@ -36,4 +37,4 @@ The final clean-browser run completed without new console errors. Network inspec
 
 ## Evidence
 
-Fresh screenshots and the capture manifest are in `artifacts/public-release-evidence/`. All application screenshots use the public Pages URL as their source.
+Fresh screenshots and the capture manifest are in `deployment-evidence/` and `artifacts/final-screenshots/`. All application screenshots use the public Pages URL as their source.
