@@ -1,0 +1,19 @@
+{
+  "publicUrl": "https://amit1858.github.io/buildwise-ai-value-architect/",
+  "deployedSourceCommit": "fdd2841d6d57cd7bac35ca3acf15b669d96d2faf",
+  "workflowRunId": "34450964204",
+  "workflowRunUrl": "https://github.com/amit1858/buildwise-ai-value-architect/actions/runs/34450964204",
+  "capturedAt": "2026-09-10T07:42:00Z",
+  "captures": [
+    { "file": "landing-light.png", "route": "/", "viewport": "1440x1000", "theme": "light" },
+    { "file": "landing-dark.png", "route": "/", "viewport": "1440x1000", "theme": "dark" },
+    { "file": "scenario-comparison.png", "route": "/workspace/demo-support-project/scenarios", "viewport": "1440x1000", "theme": "light" },
+    { "file": "prompt-comparison.png", "route": "/workspace/demo-support-project/prompts", "viewport": "1440x1000", "theme": "light" },
+    { "file": "landing-mobile.png", "route": "/", "viewport": "390x844", "theme": "light" },
+    { "file": "workload-spine.png", "route": "/workspace/demo-support-project/spine", "viewport": "1440x1000", "theme": "light" },
+    { "file": "editable-routing-drawer.png", "route": "/workspace/demo-support-project/workflow", "viewport": "1440x1000", "theme": "light" },
+    { "file": "calculation-drawer.png", "route": "/workspace/demo-support-project/scenarios", "viewport": "1440x1000", "theme": "light" },
+    { "file": "simulated-result.png", "route": "/workspace/demo-support-project/test", "viewport": "1440x1000", "theme": "light" },
+    { "file": "build-kit.png", "route": "/workspace/demo-support-project/build-kit", "viewport": "1440x1000", "theme": "light" }
+  ]
+}
