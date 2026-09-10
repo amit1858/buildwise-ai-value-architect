@@ -48,7 +48,7 @@ export function LandingPage() {
               Build the right AI system. Spend only where it adds value.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-stone-600">
-              Decompose an enterprise AI use case, route each task to the right model, forecast token costs and generate a build-ready operating plan.
+              Turn an enterprise problem into a build-ready, budget-aware AI operating blueprint: assess suitability, separate deterministic work from model work, choose a delivery path, and show the economics behind every decision.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link href="/new" className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-stone-700">
@@ -59,9 +59,9 @@ export function LandingPage() {
               </button>
             </div>
             <div className="mt-10 flex flex-wrap gap-6 text-sm text-stone-600">
-              <div><span className="font-semibold text-stone-900">4 scenarios</span> compared</div>
-              <div><span className="font-semibold text-stone-900">Deterministic first</span> design</div>
-              <div><span className="font-semibold text-stone-900">Cost-aware</span> routing</div>
+              <div><span className="font-semibold text-stone-900">Suitability</span> before model choice</div>
+              <div><span className="font-semibold text-stone-900">3 build paths</span> compared</div>
+              <div><span className="font-semibold text-stone-900">Auditable</span> token economics</div>
             </div>
           </div>
 
@@ -100,6 +100,20 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 border-y border-stone-200 py-10 md:grid-cols-3">
+          {[
+            ["01", "Assess the work", "Classify deterministic rules, retrieval, model-assisted tasks, and human decisions before choosing a provider."],
+            ["02", "Choose how to build", "Compare Low-code, Pro-code, and Hybrid delivery with explicit ownership, trade-offs, and governance."],
+            ["03", "Hand off the build", "Generate a workflow, routing matrix, prompt pack, token forecast, review policy, and implementation brief."],
+          ].map(([number, title, copy]) => (
+            <div key={number} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="text-xs font-semibold tracking-[0.2em] text-amber-700">{number}</div>
+              <h2 className="mt-3 text-lg font-semibold text-stone-900">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-stone-600">{copy}</p>
+            </div>
+          ))}
         </section>
 
         <section className="pb-10">
