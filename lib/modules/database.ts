@@ -18,13 +18,13 @@ const DB_RECOMMENDATIONS: DbRecommendation[] = [
     name: "Azure Cosmos DB",
     whenToUse: "Global distribution, high write throughput, flexible/document schema, or multi-region requirements. Best for AI tools, marketplaces, and mobile backends.",
     why: "Turnkey global replication, single-digit millisecond latency, schema flexibility, and native support for multiple APIs (SQL, MongoDB, Cassandra).",
-    tradeoffs: "No joins — data must be denormalized. Cost can spike with high RU consumption. Querying non-key fields requires careful index planning.",
+    tradeoffs: "No joins - data must be denormalized. Cost can spike with high RU consumption. Querying non-key fields requires careful index planning.",
   },
   {
     name: "Azure Cache for Redis",
     whenToUse: "Session storage, rate limiting, real-time leaderboards, pub/sub messaging, or caching expensive query results.",
     why: "Sub-millisecond latency, proven for caching and ephemeral state. Azure-managed with geo-replication and persistence options.",
-    tradeoffs: "Not a primary data store — data loss risk if persistence is misconfigured. Memory is expensive at scale. Not suitable for complex queries.",
+    tradeoffs: "Not a primary data store - data loss risk if persistence is misconfigured. Memory is expensive at scale. Not suitable for complex queries.",
   },
   {
     name: "Azure Data Lake / Synapse Analytics",
@@ -70,20 +70,20 @@ export function generateModule(
     reasoning: `${primary} is the best fit for a ${spine.productType} because it aligns with the data access patterns of this product type. Azure-native services reduce operational overhead and integrate seamlessly with identity, monitoring, and billing.`,
     tradeoffs: [
       `${primary}: strong for this use case, but ${primary.includes("Cosmos") ? "requires upfront schema/access-pattern design" : "requires managed migrations as schema evolves"}`,
-      "Mixing databases adds operational complexity — only worth it at proven bottlenecks",
+      "Mixing databases adds operational complexity - only worth it at proven bottlenecks",
       spine.complexity === "complex"
         ? "Complex systems may need read replicas or CQRS to separate write and read models"
         : "Premature database optimization is one of the most common causes of over-engineering",
     ],
     risks: [
-      "Choosing a database for familiarity rather than fit — validate against your actual query patterns",
-      "No backup and disaster recovery plan from day one — define RPO/RTO early",
+      "Choosing a database for familiarity rather than fit - validate against your actual query patterns",
+      "No backup and disaster recovery plan from day one - define RPO/RTO early",
       spine.productType === "AI tool" || spine.productType === "analytics tool"
-        ? "Data volume growth can be exponential — plan storage tiering and retention policies early"
+        ? "Data volume growth can be exponential - plan storage tiering and retention policies early"
         : "Schema migrations on live data without a migration strategy cause production incidents",
     ],
     nextSteps: [
-      `Provision ${primary} on Azure — use the free/developer tier to start`,
+      `Provision ${primary} on Azure - use the free/developer tier to start`,
       "Define your 5 most important query patterns before designing the schema",
       `${spine.complexity !== "simple" ? `Add ${secondary} for sessions and caching once the core schema is stable` : "Skip secondary stores until you have a measured reason to add them"}`,
       "Set up automated backups and enable soft-delete on all primary data stores",

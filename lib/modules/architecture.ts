@@ -27,29 +27,29 @@ export function generateModule(
   return {
     title: "Architecture",
     summary: `Recommended pattern for a ${spine.complexity} ${spine.productType}: ${pattern} ${arch}`,
-    keyDecision: `Start with a ${spine.complexity === "complex" ? "service-oriented" : "monolithic"} architecture. ${spine.complexity === "complex" ? "Define service boundaries early — they are expensive to change." : "Do not split services until you hit a concrete bottleneck."}`,
-    reasoning: `A ${spine.complexity === "simple" ? "monolith" : spine.complexity === "medium" ? "monolith with a job queue" : "service-oriented approach"} is the right starting point for this complexity level. Premature distribution is one of the most common causes of failed startups — you pay the operational cost before you have the traffic to justify it.`,
+    keyDecision: `Start with a ${spine.complexity === "complex" ? "service-oriented" : "monolithic"} architecture. ${spine.complexity === "complex" ? "Define service boundaries early - they are expensive to change." : "Do not split services until you hit a concrete bottleneck."}`,
+    reasoning: `A ${spine.complexity === "simple" ? "monolith" : spine.complexity === "medium" ? "monolith with a job queue" : "service-oriented approach"} is the right starting point for this complexity level. Premature distribution is one of the most common causes of failed startups - you pay the operational cost before you have the traffic to justify it.`,
     tradeoffs: [
       "Monolith: faster to build, easier to debug, harder to scale independently",
-      "Microservices: independently scalable, but 3–5x more infrastructure complexity",
+      "Microservices: independently scalable, but 3-5x more infrastructure complexity",
       spine.complexity === "complex"
-        ? "Complex products need clear service contracts early — without them, distributed systems become a distributed monolith"
+        ? "Complex products need clear service contracts early - without them, distributed systems become a distributed monolith"
         : "For simple/medium complexity, the cost of service extraction outweighs the benefits until ~10k users",
     ],
     risks: [
-      "Building microservices before product-market fit — you'll rewrite services that shouldn't exist",
-      "No auth strategy defined early — retrofitting auth is expensive",
+      "Building microservices before product-market fit - you'll rewrite services that shouldn't exist",
+      "No auth strategy defined early - retrofitting auth is expensive",
       spine.productType === "marketplace"
-        ? "Marketplace transaction integrity — distributed transactions require careful design"
-        : "Database schema migrations at scale — plan for zero-downtime migrations from the start",
+        ? "Marketplace transaction integrity - distributed transactions require careful design"
+        : "Database schema migrations at scale - plan for zero-downtime migrations from the start",
     ],
     nextSteps: [
       `Draw the system diagram: ${spine.complexity === "simple" ? "client → API → DB" : "client → API gateway → services → databases"}`,
-      "Define auth strategy: session-based, JWT, or OAuth — decide before writing the first route",
+      "Define auth strategy: session-based, JWT, or OAuth - decide before writing the first route",
       "Choose deployment target: Vercel, Railway, Azure App Service, or AKS",
       spine.complexity === "complex"
         ? "Document service boundaries and ownership before writing code"
-        : "Create a single repository with clear folder boundaries — enforce them in code review",
+        : "Create a single repository with clear folder boundaries - enforce them in code review",
     ],
   };
 }

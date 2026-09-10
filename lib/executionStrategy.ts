@@ -11,11 +11,11 @@ import type {
 const LOWCODE_TOOL: Record<string, { primary: string; why: string }> = {
   marketplace:      { primary: "Bubble",                 why: "Native marketplace workflows, user roles, and payment integrations without custom code." },
   "developer tool": { primary: "Retool",                 why: "API-connected, data-rich interfaces that developers and technical users expect." },
-  "internal tool":  { primary: "Retool or AppSmith",     why: "Built for internal ops — connects to any database, supports RBAC, ships fast." },
+  "internal tool":  { primary: "Retool or AppSmith",     why: "Built for internal ops - connects to any database, supports RBAC, ships fast." },
   "mobile app":     { primary: "FlutterFlow",            why: "Visual Flutter builder with native performance and app store deployment." },
   "AI tool":        { primary: "Bubble + OpenAI plugin", why: "Fastest way to wire a UI to an AI backend without writing server code." },
   "analytics tool": { primary: "Retool + Metabase",      why: "Retool for interactive tools, Metabase for read-only dashboards and reporting." },
-  "e-commerce":     { primary: "Shopify",                why: "Purpose-built for e-commerce — payments, inventory, and storefronts out of the box." },
+  "e-commerce":     { primary: "Shopify",                why: "Purpose-built for e-commerce - payments, inventory, and storefronts out of the box." },
   SaaS:             { primary: "Bubble",                 why: "Full-stack no-code with auth, database, and workflow automation built in." },
 };
 
@@ -103,11 +103,11 @@ function buildProCodeOutputs(
       type: "list",
       content: [
         `Initialize repo: npx create-next-app@latest --typescript`,
-        `Set up auth (NextAuth / Clerk) before writing any app logic — retrofitting auth is expensive`,
+        `Set up auth (NextAuth / Clerk) before writing any app logic - retrofitting auth is expensive`,
         `Define the core database schema for ${spine.mvpWedge} using ${primaryDb}`,
         `Create the API route: POST /api/${slug}`,
         `Build the single frontend page that calls this route`,
-        `Wire the full end-to-end flow — skip UI polish until it works`,
+        `Wire the full end-to-end flow - skip UI polish until it works`,
         `Deploy staging: Vercel or Railway`,
         `Get a real user through the flow before adding anything else`,
       ],
@@ -122,7 +122,7 @@ function buildProCodeOutputs(
         `/components/InputForm.tsx → Core input form`,
         `/components/ui/ → Button, Card, Input, Badge shared primitives`,
         `State strategy: sessionStorage for MVP → server state after validation`,
-        `Styling: Tailwind CSS — stay with existing design tokens`,
+        `Styling: Tailwind CSS - stay with existing design tokens`,
       ],
     },
     {
@@ -191,10 +191,10 @@ function buildLowCodeOutputs(
     {
       label: "Recommended Tool",
       type: "text",
-      content: `${tool} — ${LOWCODE_TOOL[spine.productType]?.why ?? "Best fit for this product type."}`,
+      content: `${tool} - ${LOWCODE_TOOL[spine.productType]?.why ?? "Best fit for this product type."}`,
     },
     {
-      label: "Sprint 1 — MVP Wedge Prompt",
+      label: "Sprint 1 - MVP Wedge Prompt",
       type: "prompt",
       content: `Build the core "${spine.mvpWedge}" flow using ${tool}.
 
@@ -215,7 +215,7 @@ Do NOT build yet:
 - Mobile view or responsive design`,
     },
     {
-      label: "Sprint 2 — Auth + Data Prompt",
+      label: "Sprint 2 - Auth + Data Prompt",
       type: "prompt",
       content: `Add user authentication and persist core data.
 
@@ -235,7 +235,7 @@ Do NOT build yet:
 - Settings or profile pages`,
     },
     {
-      label: "Sprint 3 — Polish + Launch Prompt",
+      label: "Sprint 3 - Polish + Launch Prompt",
       type: "prompt",
       content: `Polish the core flow and prepare for first real users.
 
@@ -246,7 +246,7 @@ Build:
 1. Fix the top 3 friction points found in Sprint 2 testing
 2. Add an onboarding state for new users who have no data yet
 3. Add empty states and basic error messages
-4. Test the full flow end-to-end with 2–3 real users
+4. Test the full flow end-to-end with 2-3 real users
 
 Validate before launching:
 - Can a new user complete "${spine.mvpWedge}" without any help?
@@ -255,27 +255,27 @@ Validate before launching:
 - Does it work on both desktop and mobile?`,
     },
     {
-      label: "After Each Sprint — Validation Checklist",
+      label: "After Each Sprint - Validation Checklist",
       type: "list",
       content: [
         `Sprint 1: Can you demo the ${spine.mvpWedge} flow end-to-end in under 2 minutes?`,
         `Sprint 1: Does the data model support the flow without workarounds or hacks?`,
         `Sprint 2: Can a new user sign up and reach the core flow without any guidance?`,
         `Sprint 2: Does user data persist correctly after logout and re-login?`,
-        `Sprint 3: Did 2–3 real users complete the flow without you explaining it?`,
+        `Sprint 3: Did 2-3 real users complete the flow without you explaining it?`,
         `Sprint 3: Are all error and empty states handled (not just the happy path)?`,
         `Launch: Is the flow completable on both desktop and mobile browsers?`,
       ],
     },
     {
-      label: "What to Defer — Do Not Build Yet",
+      label: "What to Defer - Do Not Build Yet",
       type: "list",
       content: [
-        "Payment and subscription flows — validate willingness to pay separately first",
-        "Email notifications — use manual outreach until the core flow is proven",
-        "Admin dashboard or reporting — your first users can tell you directly",
-        "Mobile app — validate on web first unless mobile is the only viable channel",
-        "Third-party integrations — build the standalone workflow before connecting it to other tools",
+        "Payment and subscription flows - validate willingness to pay separately first",
+        "Email notifications - use manual outreach until the core flow is proven",
+        "Admin dashboard or reporting - your first users can tell you directly",
+        "Mobile app - validate on web first unless mobile is the only viable channel",
+        "Third-party integrations - build the standalone workflow before connecting it to other tools",
       ],
     },
   ];
@@ -296,7 +296,7 @@ export function generateExecutionStrategy(
     executionMode: isProCode ? "Engineering Scaffold Plan" : "Low-Code Sprint Prompts",
     summary: isProCode
       ? `Pro-code scaffold plan for a ${spine.complexity} ${spine.productType}. Focus: ${spine.mvpWedge}. Structured for a developer or small team shipping fast without over-engineering.`
-      : `Prompt-driven sprint plan for building a ${spine.productType} in ${tool} without writing code. Optimized for ${spine.personaType}s who want to ship and validate in 2–3 weeks.`,
+      : `Prompt-driven sprint plan for building a ${spine.productType} in ${tool} without writing code. Optimized for ${spine.personaType}s who want to ship and validate in 2-3 weeks.`,
     outputs: isProCode
       ? buildProCodeOutputs(input, spine, modules)
       : buildLowCodeOutputs(input, spine),
@@ -310,7 +310,7 @@ export function generateExecutionStrategy(
       : [
           `Sign up for ${tool} and create a new blank app`,
           `Copy the Sprint 1 prompt above into the AI builder or use it as your build spec`,
-          `Build only the ${spine.mvpWedge} — nothing more in Sprint 1`,
+          `Build only the ${spine.mvpWedge} - nothing more in Sprint 1`,
           "Get 2 real users to test Sprint 1 before starting Sprint 2",
         ],
   };

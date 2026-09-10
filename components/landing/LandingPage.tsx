@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buildDemoProject, exampleUseCases, formatMoney, type IntakeForm } from "@/lib/buildwise";
@@ -10,6 +11,8 @@ export function LandingPage() {
   const demoProject = buildDemoProject();
   const baseline = demoProject.scenarios.find((scenario) => scenario.id === "baseline");
   const balanced = demoProject.scenarios.find((scenario) => scenario.id === "balanced");
+  const deterministicTasks = demoProject.tasks.filter((task) => !task.needsLLM).length;
+  const reviewTasks = demoProject.tasks.filter((task) => task.humanReviewPolicy !== "Never").length;
 
   const loadExample = (input: IntakeForm) => {
     const project = createProjectFromInput(input);
@@ -22,123 +25,186 @@ export function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-100 text-stone-900">
-      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
-        <header className="mb-10 flex items-center justify-between border-b border-stone-300/80 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-300 bg-white text-xs font-bold text-stone-800">B</div>
+    <main id="main-content" className="min-h-[100dvh] bg-stone-100 text-stone-900">
+      <div className="mx-auto max-w-[1360px] px-4 py-5 sm:px-6 lg:px-10">
+        <header className="landing-reveal flex min-h-16 items-center justify-between gap-4 border-b border-stone-300/80 pb-4">
+          <Link href="/" className="group flex items-center gap-3" aria-label="BuildWise home">
+            <div className="grid h-8 w-8 place-items-center rounded-[8px] border border-amber-700/30 bg-amber-100 text-xs font-semibold text-amber-950 transition group-hover:border-amber-800">
+              B
+            </div>
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">BuildWise</div>
+              <div className="text-sm font-semibold text-stone-900">BuildWise</div>
               <div className="text-xs text-stone-600">AI Value Architect</div>
             </div>
-          </div>
-          <nav className="hidden items-center gap-6 text-sm text-stone-600 md:flex">
-            <Link href="/methodology">Methodology</Link>
-            <Link href="/settings/providers">BYOK providers</Link>
-            <button onClick={openExisting} className="rounded-full border border-stone-300 bg-white px-4 py-2 font-medium text-stone-700 transition hover:border-stone-500 hover:text-stone-900">
-              Open saved project
+          </Link>
+          <nav className="hidden items-center gap-5 text-sm text-stone-700 md:flex" aria-label="Primary">
+            <Link href="/methodology" className="font-medium hover:text-stone-900">Methodology</Link>
+            <Link href="/settings/providers" className="font-medium hover:text-stone-900">BYOK providers</Link>
+            <button onClick={openExisting} className="rounded-[8px] border border-stone-300 bg-white px-4 py-2 font-semibold text-stone-800 hover:border-amber-700">
+              Open workspace
             </button>
           </nav>
         </header>
 
-        <section className="grid gap-8 pb-14 pt-2 lg:grid-cols-[1.14fr_0.86fr] lg:items-end">
-          <div>
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-amber-700">Operational planning for AI programs</p>
-            <h1 className="max-w-xl text-4xl font-semibold tracking-[-0.06em] text-stone-900 md:text-5xl">
-              Build the right AI system. Spend only where it adds value.
-            </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-stone-600">
-              Turn an enterprise problem into a build-ready, budget-aware AI operating blueprint: assess suitability, separate deterministic work from model work, choose a delivery path, and show the economics behind every decision.
+        <section className="grid min-h-[calc(100dvh-6rem)] gap-10 py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-center lg:py-14">
+          <div className="landing-reveal" style={{ "--reveal-delay": "80ms" } as CSSProperties}>
+            <p className="mb-4 max-w-[62ch] text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-800">
+              Enterprise AI planning
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/new" className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-stone-700">
-                Start with a blank use case
+            <h1 className="max-w-[11ch] text-balance text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-stone-900 sm:text-6xl lg:text-7xl">
+              Design AI systems that can be defended.
+            </h1>
+            <p className="mt-6 max-w-[58ch] text-pretty text-lg leading-8 text-stone-700">
+              Classify tasks, route models, forecast cost, and export a Build Kit finance and engineering can inspect.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/new" className="rounded-[8px] bg-stone-900 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-amber-900">
+                Start blank
               </Link>
-              <button onClick={() => router.push("/workspace/demo-support-project/spine")} className="rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-medium text-stone-800 transition hover:border-stone-500">
-                Try the interactive demo
+              <button onClick={() => router.push("/workspace/demo-support-project/build-kit")} className="rounded-[8px] border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-800 hover:border-amber-700">
+                Inspect demo
               </button>
             </div>
-            <div className="mt-10 flex flex-wrap gap-6 text-sm text-stone-600">
-              <div><span className="font-semibold text-stone-900">Suitability</span> before model choice</div>
-              <div><span className="font-semibold text-stone-900">3 build paths</span> compared</div>
-              <div><span className="font-semibold text-stone-900">Auditable</span> token economics</div>
-            </div>
           </div>
 
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.08)]">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Demo story</p>
-                <h2 className="mt-2 text-xl font-semibold text-stone-900">Customer-support optimisation</h2>
-              </div>
-              <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Demo mode</div>
+          <div className="landing-reveal relative grid gap-4 lg:grid-cols-[0.72fr_1fr]" style={{ "--reveal-delay": "160ms" } as CSSProperties}>
+            <div className="space-y-4 lg:pt-14">
+              <MetricTile label="Monthly volume" value="100,000" detail="support interactions" />
+              <MetricTile label="Deterministic tasks" value={`${deterministicTasks}/${demoProject.tasks.length}`} detail="kept out of LLM billing" />
             </div>
-            <div className="space-y-4 text-sm text-stone-600">
-              <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Monthly volume</div>
-                <div className="mt-2 text-2xl font-semibold text-stone-900">100,000</div>
-                <div className="text-stone-600">interactions per month</div>
+            <div className="rounded-2xl border border-stone-300 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-stone-900">Customer-support optimisation</div>
+                  <p className="mt-2 max-w-[46ch] text-sm leading-6 text-stone-600">
+                    A live demo project showing routing, budget policy, prompt contracts, and review gates.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Demo</span>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Naive baseline</div>
-                  <div className="mt-2 text-lg font-semibold text-stone-900">{baseline?.monthlyCost === 0 ? "Unavailable" : formatMoney(baseline?.monthlyCost ?? 0)}</div>
-                  <div className="text-xs text-stone-500">Demo catalogue pricing</div>
-                </div>
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Balanced route</div>
-                  <div className="mt-2 text-lg font-semibold text-stone-900">{balanced?.monthlyCost === 0 ? "Unavailable" : formatMoney(balanced?.monthlyCost ?? 0)}</div>
-                  <div className="text-xs text-stone-500">Demo catalogue pricing</div>
-                </div>
+              <div className="mt-6 grid gap-3">
+                {[
+                  ["Intake", "Problem, users, volume, quality, and budget"],
+                  ["Decision spine", "Workload category, risk, and deterministic controls"],
+                  ["Routing", "Task-level execution method and model fallback"],
+                  ["Build Kit", "Exportable implementation artifacts"],
+                ].map(([label, detail], index) => (
+                  <div key={label} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 border-t border-stone-200 pt-3 first:border-t-0 first:pt-0">
+                    <div className="font-mono text-sm tabular-nums text-amber-800">{String(index + 1).padStart(2, "0")}</div>
+                    <div>
+                      <div className="text-sm font-semibold text-stone-900">{label}</div>
+                      <div className="mt-1 text-sm leading-6 text-stone-600">{detail}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
-                <div className="font-medium text-stone-900">Primary result</div>
-                <div className="mt-2 text-stone-600">Deterministic pre-filtering and smaller-model classification reduce token waste while preserving human review where the decision matters.</div>
-                <button type="button" className="mt-4 rounded-full border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700">View calculation</button>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <CostTile label="Naive baseline" value={baseline?.monthlyCost === 0 ? "Unavailable" : formatMoney(baseline?.monthlyCost ?? 0)} />
+                <CostTile label="Balanced route" value={balanced?.monthlyCost === 0 ? "Unavailable" : formatMoney(balanced?.monthlyCost ?? 0)} accent />
               </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 border-y border-stone-200 py-10 md:grid-cols-3">
-          {[
-            ["01", "Assess the work", "Classify deterministic rules, retrieval, model-assisted tasks, and human decisions before choosing a provider."],
-            ["02", "Choose how to build", "Compare Low-code, Pro-code, and Hybrid delivery with explicit ownership, trade-offs, and governance."],
-            ["03", "Hand off the build", "Generate a workflow, routing matrix, prompt pack, token forecast, review policy, and implementation brief."],
-          ].map(([number, title, copy]) => (
-            <div key={number} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-              <div className="text-xs font-semibold tracking-[0.2em] text-amber-700">{number}</div>
-              <h2 className="mt-3 text-lg font-semibold text-stone-900">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-stone-600">{copy}</p>
-            </div>
-          ))}
+        <section className="landing-reveal grid gap-5 border-y border-stone-300/80 py-12 lg:grid-cols-[1fr_1.35fr]" style={{ "--reveal-delay": "220ms" } as CSSProperties}>
+          <div>
+            <h2 className="max-w-[13ch] text-balance text-3xl font-semibold leading-tight tracking-[-0.055em] text-stone-900 md:text-4xl">
+              The model is not the starting point.
+            </h2>
+          </div>
+          <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
+            <Principle title="Deterministic first" copy="Rules, retrieval, and schema checks sit before generation so routine work avoids model spend." />
+            <Principle title="Task-level routing" copy="Every task carries a provider, model, fallback, retry assumption, and human-review gate." />
+            <Principle title="Context budget" copy="Token estimates show instruction, retrieved context, variable input, output allowance, retries, and fallback." />
+            <Principle title="Implementation handoff" copy="The Build Kit exports prompts, routing, policies, evaluation plans, and low-code or pro-code guidance." />
+          </div>
         </section>
 
-        <section className="pb-10">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Sample use cases</p>
-              <h2 className="mt-2 text-2xl font-semibold text-stone-900">Start from a grounded enterprise scenario</h2>
+        <section className="landing-reveal py-12" style={{ "--reveal-delay": "280ms" } as CSSProperties}>
+          <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-2xl border border-stone-300 bg-white p-6 shadow-sm">
+              <h2 className="max-w-[18ch] text-balance text-3xl font-semibold tracking-[-0.055em] text-stone-900">
+                One operating blueprint, three delivery paths.
+              </h2>
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                {demoProject.buildPaths?.map((path) => (
+                  <article key={path.id} className={path.id === demoProject.recommendedBuildPath ? "rounded-xl border border-amber-700 bg-amber-50 p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
+                    <div className="text-base font-semibold text-stone-900">{path.label}</div>
+                    <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-amber-800">{path.fitScore}%</div>
+                    <p className="mt-3 text-sm leading-6 text-stone-600">{path.summary}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-stone-300 bg-stone-900 p-6 text-white shadow-sm">
+              <div className="text-sm font-semibold text-amber-200">Governance posture</div>
+              <p className="mt-4 text-pretty text-2xl font-semibold leading-tight tracking-[-0.045em] text-white">
+                {reviewTasks} review gates remain visible before any consequential answer is accepted.
+              </p>
+              <div className="mt-6 space-y-3 text-sm leading-6 text-stone-200">
+                <div>Provider credentials stay out of public-demo exports.</div>
+                <div>Provider-reported usage is separated from simulated demo evidence.</div>
+                <div>Fallback policy is explicit before production rollout.</div>
+              </div>
             </div>
           </div>
-          <div className="grid gap-5 lg:grid-cols-3">
-            {exampleUseCases.map((example) => (
+        </section>
+
+        <section className="landing-reveal pb-14" style={{ "--reveal-delay": "340ms" } as CSSProperties}>
+          <div className="mb-6 max-w-[64ch]">
+            <h2 className="text-balance text-3xl font-semibold tracking-[-0.055em] text-stone-900">
+              Start from a grounded scenario.
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              Each sample creates a project with workflow decomposition, scenario economics, prompts, and Build Kit exports.
+            </p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_1fr]">
+            {exampleUseCases.map((example, index) => (
               <button
                 key={example.projectName}
                 onClick={() => loadExample(example as IntakeForm)}
-                className="rounded-2xl border border-stone-200 bg-white p-5 text-left shadow-sm transition hover:border-stone-400 hover:shadow-md"
+                className={`rounded-2xl border border-stone-300 bg-white p-5 text-left shadow-sm hover:border-amber-700 ${index === 1 ? "lg:mt-10" : ""}`}
               >
-                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Enterprise workflow</div>
-                <h3 className="text-lg font-semibold text-stone-900">{example.projectName}</h3>
+                <div className="text-base font-semibold text-stone-900">{example.projectName}</div>
                 <p className="mt-3 text-sm leading-6 text-stone-600">{example.problemStatement}</p>
-                <div className="mt-5 text-sm font-medium text-amber-800">Open scenario →</div>
+                <div className="mt-5 text-sm font-semibold text-amber-900">Open scenario</div>
               </button>
             ))}
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function MetricTile({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-stone-300 bg-white p-5 shadow-sm">
+      <div className="text-sm font-medium text-stone-600">{label}</div>
+      <div className="mt-3 font-mono text-3xl font-semibold tabular-nums text-stone-900">{value}</div>
+      <div className="mt-1 text-sm text-stone-600">{detail}</div>
+    </div>
+  );
+}
+
+function CostTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={accent ? "rounded-xl border border-amber-700 bg-amber-50 p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
+      <div className="text-sm font-medium text-stone-600">{label}</div>
+      <div className="mt-2 font-mono text-xl font-semibold tabular-nums text-stone-900">{value}</div>
+      <div className="mt-1 text-xs text-stone-600">Demo catalogue pricing</div>
+    </div>
+  );
+}
+
+function Principle({ title, copy }: { title: string; copy: string }) {
+  return (
+    <article className="border-t border-stone-300 pt-4">
+      <h3 className="text-lg font-semibold text-stone-900">{title}</h3>
+      <p className="mt-2 max-w-[58ch] text-sm leading-6 text-stone-600">{copy}</p>
+    </article>
   );
 }

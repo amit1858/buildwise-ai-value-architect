@@ -14,12 +14,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BuildWise",
+  metadataBase: new URL("https://amit1858.github.io/buildwise-ai-value-architect/"),
+  title: {
+    default: "BuildWise: AI Value Architect",
+    template: "%s | BuildWise",
+  },
   description: "Design cost-aware enterprise AI systems with task-level model routing, prompt optimization, token forecasting, budget policies and BYOK provider support.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "BuildWise — AI Value Architect",
-    description: "Turn an enterprise AI idea into a cost-aware operating blueprint.",
+    title: "BuildWise: AI Value Architect",
+    description: "Turn an enterprise AI idea into a cost-aware operating blueprint with deterministic routing, context budgets, and implementation artifacts.",
+    url: "/",
+    siteName: "BuildWise",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BuildWise: AI Value Architect",
+    description: "Plan enterprise AI systems with task-level routing, token economics, and implementation Build Kits.",
   },
 };
 
@@ -35,6 +49,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: `(() => { const p = localStorage.getItem('buildwise-theme') || 'system'; const d = p === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; document.documentElement.dataset.theme = d; document.documentElement.style.colorScheme = d; })()` }} />
+        <a className="skip-link" href="#main-content">Skip to content</a>
         <div className="global-theme-control"><ThemeControl /></div>
         {children}
       </body>

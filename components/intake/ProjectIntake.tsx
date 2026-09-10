@@ -63,7 +63,7 @@ export function ProjectIntake() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
+    <main id="main-content" className="min-h-[100dvh] bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex items-center justify-between border-b border-stone-300 pb-4">
           <div>
@@ -175,7 +175,7 @@ export function ProjectIntake() {
                 </Field>
                 <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700">
                   <div className="font-medium text-stone-900">Current understanding</div>
-                  <div className="mt-2 leading-6">{form.projectName || "Untitled"} — {form.problemStatement || "No problem statement yet."} {form.executionsPerMonth ? `Approx. ${form.executionsPerMonth.toLocaleString("en-US")} monthly executions.` : ""}</div>
+                  <div className="mt-2 leading-6">{form.projectName || "Untitled"} - {form.problemStatement || "No problem statement yet."} {form.executionsPerMonth ? `Approx. ${form.executionsPerMonth.toLocaleString("en-US")} monthly executions.` : ""}</div>
                 </div>
               </>
             )}

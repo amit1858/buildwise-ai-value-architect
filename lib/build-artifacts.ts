@@ -73,7 +73,7 @@ function buildArtifactHeader(project: Project, title: string, summary: string, s
 
 function makeTaskRows(project: Project): string {
   return project.tasks
-    .map((task) => `- ${task.name} (${task.taskType}) — ${task.recommendedExecutionMethod}; ${task.needsLLM ? "LLM-assisted" : "Deterministic"}; primary: ${task.primaryProvider}/${task.primaryModel}; fallback: ${task.fallbackProvider}/${task.fallbackModel}`)
+    .map((task) => `- ${task.name} (${task.taskType}) - ${task.recommendedExecutionMethod}; ${task.needsLLM ? "LLM-assisted" : "Deterministic"}; primary: ${task.primaryProvider}/${task.primaryModel}; fallback: ${task.fallbackProvider}/${task.fallbackModel}`)
     .join("\n");
 }
 
@@ -251,7 +251,7 @@ export function generateBuildArtifacts(project: Project, selectedScenarioId: Sce
         `- Cached tokens: ${selectedScenario?.cachedTokens.toLocaleString() ?? "0"}`,
         "",
         `## Deterministic-task clarification`,
-        "Deterministic tasks are never presented as billed model calls. If a deterministic path is retained for traceability, label it as 'Avoided LLM token estimate' and mark execution as 'deterministic — no model call'.",
+        "Deterministic tasks are never presented as billed model calls. If a deterministic path is retained for traceability, label it as 'Avoided LLM token estimate' and mark execution as 'deterministic - no model call'.",
       ].join("\n")),
     },
     {

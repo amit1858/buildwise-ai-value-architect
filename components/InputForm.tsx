@@ -47,7 +47,7 @@ export default function InputForm() {
       sessionStorage.setItem("buildwise_result", JSON.stringify(data));
       router.push("/results");
     } catch {
-      setError("Network error — please check your connection and try again.");
+      setError("Network error - please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function InputForm() {
       {/* Problem */}
       <div>
         <Label>Product / Problem Statement</Label>
-        <Hint>Describe your idea — BuildWise will plan the right first version.</Hint>
+        <Hint>Describe your idea - BuildWise will plan the right first version.</Hint>
         <textarea
           required
           rows={4}

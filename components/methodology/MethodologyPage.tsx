@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export function MethodologyPage() {
   return (
-    <main className="min-h-screen bg-stone-100 px-6 py-8 text-stone-900">
+    <main id="main-content" className="min-h-[100dvh] bg-stone-100 px-6 py-8 text-stone-900">
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="flex items-center justify-between border-b border-stone-300 pb-5">
           <div>

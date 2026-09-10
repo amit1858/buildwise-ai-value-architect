@@ -12,6 +12,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
   const [project, setProject] = useState<Project | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("balanced");
   const [lastTest, setLastTest] = useState<ControlledTestRecord | null>(null);
+  const [notice, setNotice] = useState<{ tone: "info" | "error" | "success"; message: string } | null>(null);
 
   useEffect(() => {
     const loaded = getProjectById(projectId) ?? (projectId === "demo-support-project" ? buildDemoProject() : null);
@@ -46,10 +47,10 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
     const configured = readSessionProviderSettings().find((provider) => provider.status === "Connected" && provider.isEnabledForSession);
     const provider = configured ? getSessionProvider(configured.id) : null;
     if (mode === "live-byok" && !provider) {
-      window.alert("Live mode requires a successfully validated provider in this browser session.");
+      setNotice({ tone: "error", message: "Live mode requires a successfully validated provider in this browser session." });
       return;
     }
-    if (!window.confirm(`Run one controlled ${mode === "demo" ? "demo" : "provider"} test for ${chosen.name}? No automatic calls are made.`)) return;
+    setNotice({ tone: "info", message: `Running one controlled ${mode === "demo" ? "demo" : "provider"} test for ${chosen.name}. No automatic paid calls are made.` });
     const demoProvider = provider ?? { id: "demo", kind: "openai-compatible" as const, displayName: "BuildWise Demo", model: chosen.primaryModel, requiresKey: false, keyLabel: "No key required", status: "Connected" as const };
     const request = {
       taskName: chosen.name,
@@ -71,7 +72,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
       });
       const payload = (await response.json()) as { ok?: boolean; result?: typeof result; message?: string };
       if (!response.ok || !payload.ok || !payload.result) {
-        window.alert(payload.message ?? "Controlled test failed.");
+        setNotice({ tone: "error", message: payload.message ?? "Controlled test failed." });
         return;
       }
       result = payload.result;
@@ -100,6 +101,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
       createdAt: new Date().toISOString(),
     };
     setLastTest(record);
+    setNotice({ tone: "success", message: `${record.provenance === "live-provider" ? "Provider test" : "Controlled demo test"} completed for ${chosen.name}.` });
     updateProject((current) => ({ ...current, testRuns: [...(current.testRuns ?? []), record], providerConfig: provider ? { ...provider, apiKey: "" } : current.providerConfig }));
   };
 
@@ -135,7 +137,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
           </div>
         </aside>
 
-        <main className="flex-1 p-4 md:p-8">
+        <main id="main-content" className="flex-1 p-4 md:p-8">
           <header className="mb-6 flex flex-col justify-between gap-4 border-b border-stone-200 pb-5 md:flex-row md:items-center">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Workspace</p>
@@ -147,6 +149,21 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
               <button onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">Export blueprint</button>
             </div>
           </header>
+
+          {notice && (
+            <div
+              role={notice.tone === "error" ? "alert" : "status"}
+              className={
+                notice.tone === "error"
+                  ? "mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                  : notice.tone === "success"
+                    ? "mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                    : "mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+              }
+            >
+              {notice.message}
+            </div>
+          )}
 
           {activeSection === "spine" && <SpinePanel project={project} />}
           {activeSection === "suitability" && <SuitabilityPanel project={project} />}
@@ -347,7 +364,7 @@ function WorkflowPanel({ project, onUpdate }: { project: Project; onUpdate: (pro
             {project.tasks.map((task) => (
               <tr key={task.id} className="border-b border-stone-200 align-top">
                 <td className="py-4 pr-4 font-medium text-stone-900">
-                  <button type="button" onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)} className="mr-2 rounded border border-stone-300 px-2 py-1 text-xs">{expandedTaskId === task.id ? "−" : "+"}</button>
+                  <button type="button" onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)} className="mr-2 rounded border border-stone-300 px-2 py-1 text-xs">{expandedTaskId === task.id ? "-" : "+"}</button>
                   <input aria-label={`${task.name} name`} value={task.name} onChange={(event) => updateTask(task.id, { name: event.target.value })} className="w-48 rounded border border-stone-200 bg-white px-2 py-1" />
                 </td>
                 <td className="py-4 pr-4 text-stone-600">{task.taskType}</td>
@@ -500,9 +517,9 @@ function PromptPanel({ project }: { project: Project }) {
             <div>Optimised expected tokens: {prompt.optimisedExpectedTokens?.toLocaleString("en-US") ?? "Unavailable"} per request</div>
             <div>{Math.abs(prompt.netTokenDelta ?? 0).toLocaleString("en-US")} {prompt.netTokenDelta && prompt.netTokenDelta < 0 ? "fewer" : "more"} expected tokens per request ({Math.abs(prompt.netTokenDeltaPercent ?? 0).toFixed(1)}%)</div>
             <div>Estimated monthly token impact: {(prompt.estimatedMonthlyTokenImpact ?? 0).toLocaleString("en-US")} tokens</div>
-            <div>Context reduction: {prompt.contextReduction && prompt.contextReduction > 0 ? "−" : ""}{prompt.contextReduction ?? 0} tokens</div>
-            <div>Output reduction: {prompt.outputReduction && prompt.outputReduction > 0 ? "−" : ""}{prompt.outputReduction ?? 0} tokens</div>
-            <div>Expected retry reduction: −{prompt.expectedRetryReduction ?? 0} calls</div>
+            <div>Context reduction: {prompt.contextReduction && prompt.contextReduction > 0 ? "-" : ""}{prompt.contextReduction ?? 0} tokens</div>
+            <div>Output reduction: {prompt.outputReduction && prompt.outputReduction > 0 ? "-" : ""}{prompt.outputReduction ?? 0} tokens</div>
+            <div>Expected retry reduction: -{prompt.expectedRetryReduction ?? 0} calls</div>
             <div>Estimation method: {prompt.estimationMethod}</div>
             <div>Validation: {prompt.validationRequired}</div>
           </div>
@@ -565,7 +582,7 @@ function BlueprintPanel({ project, estimate }: { project: Project; estimate: Sce
         <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Implementation blueprint</div>
         <div className="grid gap-4 md:grid-cols-2">
           <InfoLine label="Recommended route" value={estimate?.label ?? "Balanced"} />
-          <InfoLine label="Monthly cost" value={estimate ? formatMoney(estimate.monthlyCost) : "—"} />
+          <InfoLine label="Monthly cost" value={estimate ? formatMoney(estimate.monthlyCost) : "-"} />
           <InfoLine label="Quality sensitivity" value={project.input.qualitySensitivity} />
           <InfoLine label="Initial control set" value={`${controls.length} initial controls`} />
         </div>
@@ -642,7 +659,7 @@ function buildImplementationBrief(project: Project, estimate: ScenarioMetric | n
 }
 
 function downloadBlueprintMarkdown(project: Project, estimate: ScenarioMetric | null) {
-  const markdown = `# ${project.name}\n\n## Executive summary\n${project.input.businessOutcome}\n\n## Workload assumptions\n- Monthly executions: ${project.input.executionsPerMonth.toLocaleString("en-US")}\n- Budget: ${formatMoney(project.input.monthlyBudget)}\n- Privacy: ${project.spine.privacyLevel}\n- Pricing provenance: Demo catalogue pricing\n\n## Recommended scenario\n${estimate?.label ?? "Balanced"} — ${estimate ? formatMoney(estimate.monthlyCost) : "Monthly cost unavailable"} per month.\n\n## Scenario comparison\n${project.scenarios.map((scenario) => `- ${scenario.label}: ${formatMoney(scenario.monthlyCost)} monthly, ${scenario.savingsVsBaseline}% savings vs baseline`).join("\n")}\n\n## Workflow architecture\n${project.tasks.map((task) => `- ${task.name}: ${task.recommendedExecutionMethod}; ${task.estimatedInputTokens.toLocaleString("en-US")} input / ${task.estimatedOutputTokens.toLocaleString("en-US")} output tokens per task execution.`).join("\n")}\n\n## Governance and known limitations\n${project.spine.deterministicControls.map((control) => `- ${control}`).join("\n")}\n- Live-provider verification and contractual pricing require explicit user configuration.\n`;
+  const markdown = `# ${project.name}\n\n## Executive summary\n${project.input.businessOutcome}\n\n## Workload assumptions\n- Monthly executions: ${project.input.executionsPerMonth.toLocaleString("en-US")}\n- Budget: ${formatMoney(project.input.monthlyBudget)}\n- Privacy: ${project.spine.privacyLevel}\n- Pricing provenance: Demo catalogue pricing\n\n## Recommended scenario\n${estimate?.label ?? "Balanced"} - ${estimate ? formatMoney(estimate.monthlyCost) : "Monthly cost unavailable"} per month.\n\n## Scenario comparison\n${project.scenarios.map((scenario) => `- ${scenario.label}: ${formatMoney(scenario.monthlyCost)} monthly, ${scenario.savingsVsBaseline}% savings vs baseline`).join("\n")}\n\n## Workflow architecture\n${project.tasks.map((task) => `- ${task.name}: ${task.recommendedExecutionMethod}; ${task.estimatedInputTokens.toLocaleString("en-US")} input / ${task.estimatedOutputTokens.toLocaleString("en-US")} output tokens per task execution.`).join("\n")}\n\n## Governance and known limitations\n${project.spine.deterministicControls.map((control) => `- ${control}`).join("\n")}\n- Live-provider verification and contractual pricing require explicit user configuration.\n`;
   const blob = new Blob([markdown], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

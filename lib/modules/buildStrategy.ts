@@ -6,9 +6,9 @@ const STACK_BY_BUILDER: Record<string, string> = {
 };
 
 const TIMELINE_BY_COMPLEXITY: Record<string, string> = {
-  simple: "1–2 weeks for the MVP wedge",
-  medium: "3–5 weeks for a shippable v1",
-  complex: "6–10 weeks for an architecture-first foundation",
+  simple: "1-2 weeks for the MVP wedge",
+  medium: "3-5 weeks for a shippable v1",
+  complex: "6-10 weeks for an architecture-first foundation",
 };
 
 const LOW_CODE_PLATFORMS: Record<string, string> = {
@@ -27,7 +27,7 @@ export function generateModule(
   spine: DecisionSpineOutput
 ): ModuleOutput {
   const isProCode = spine.builderType === "pro-code";
-  const timeline = TIMELINE_BY_COMPLEXITY[spine.complexity] ?? "4–6 weeks";
+  const timeline = TIMELINE_BY_COMPLEXITY[spine.complexity] ?? "4-6 weeks";
   const stack = isProCode
     ? STACK_BY_BUILDER["pro-code"]
     : (LOW_CODE_PLATFORMS[spine.productType] ?? STACK_BY_BUILDER["low-code"]);
@@ -41,7 +41,7 @@ export function generateModule(
       isProCode
         ? "Pro-code gives full control but requires more setup time upfront"
         : "Low-code ships faster but may hit platform limits at scale",
-      `${spine.complexity === "complex" ? "Complex systems need early architecture decisions that are expensive to undo" : "Simple scope allows fast pivots — don't over-architect"}`,
+      `${spine.complexity === "complex" ? "Complex systems need early architecture decisions that are expensive to undo" : "Simple scope allows fast pivots - don't over-architect"}`,
       "Shipping fast creates learning loops; shipping perfectly wastes validation time",
     ],
     risks: [
@@ -49,11 +49,11 @@ export function generateModule(
       isProCode
         ? "Technical debt accumulates fast when moving fast without an architecture plan"
         : "Low-code lock-in: migrating off a no-code platform is painful and expensive",
-      `${spine.complexity === "complex" ? "Complex builds often take 2x the estimated time — build for this buffer" : "Simple builds can be over-engineered by developers who add unnecessary abstractions"}`,
+      `${spine.complexity === "complex" ? "Complex builds often take 2x the estimated time - build for this buffer" : "Simple builds can be over-engineered by developers who add unnecessary abstractions"}`,
     ],
     nextSteps: [
       `Set up the project with: ${stack}`,
-      `Build ONLY the ${spine.mvpWedge} — nothing else`,
+      `Build ONLY the ${spine.mvpWedge} - nothing else`,
       `Get the first user through the ${spine.mvpWedge} flow within ${spine.complexity === "simple" ? "1 week" : "2 weeks"}`,
       "Define done: what does a successful MVP test look like in measurable terms?",
       "After MVP validation: run a retrospective before adding the next feature",

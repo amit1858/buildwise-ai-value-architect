@@ -42,14 +42,14 @@ export function generateModule(
       "Expanding to multiple personas too early creates product identity problems",
     ],
     risks: [
-      `Assuming all ${spine.personaType}s have the same pain — validate with 3–5 individuals`,
+      `Assuming all ${spine.personaType}s have the same pain - validate with 3-5 individuals`,
       "Building for a persona that exists but won't pay (consumer vs. enterprise mismatch)",
       "Underestimating the technical literacy gap between you and your target user",
     ],
     nextSteps: [
       `Write a persona card: name, role, daily workflow, biggest frustration, definition of success`,
       `Identify where ${spine.personaType}s currently solve this problem (tools, workarounds, spreadsheets)`,
-      "Map a 5-step user journey from awareness to value — find the biggest drop-off point",
+      "Map a 5-step user journey from awareness to value - find the biggest drop-off point",
       "Decide: are you selling to the persona or is someone else buying on their behalf?",
     ],
   };

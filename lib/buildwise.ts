@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export type QualitySensitivity = "standard" | "high" | "critical";
 export type WorkloadMode = "batch" | "real-time" | "mixed";
@@ -823,9 +823,9 @@ export function calculateTaskCostTrace(task: WorkflowTask, monthlyExecutions: nu
     inputPrice,
     cachedInputPrice,
     outputPrice,
-    priceSource: !task.needsLLM ? "Deterministic execution — no model price" : model ? "Demo catalogue pricing" : "Pricing unavailable",
+    priceSource: !task.needsLLM ? "Deterministic execution â€” no model price" : model ? "Demo catalogue pricing" : "Pricing unavailable",
     priceVerificationDate: model?.pricingVerifiedAt,
-    costFormula: `${monthlyExecutions.toLocaleString("en-US")} executions × ${calls.toFixed(2)} calls × ${(retryMultiplier * fallbackMultiplier).toFixed(3)} retry/fallback factor × [${uncached.toLocaleString("en-US")} uncached input × input rate + ${cached.toLocaleString("en-US")} cached input × cached-input rate + ${task.estimatedOutputTokens.toLocaleString("en-US")} output × output rate]`,
+    costFormula: `${monthlyExecutions.toLocaleString("en-US")} executions Ã- ${calls.toFixed(2)} calls Ã- ${(retryMultiplier * fallbackMultiplier).toFixed(3)} retry/fallback factor Ã- [${uncached.toLocaleString("en-US")} uncached input Ã- input rate + ${cached.toLocaleString("en-US")} cached input Ã- cached-input rate + ${task.estimatedOutputTokens.toLocaleString("en-US")} output Ã- output rate]`,
     costPerExecution,
     monthlyCost: costPerExecution === null ? null : costPerExecution * monthlyExecutions,
     tokenTrace: {
@@ -1414,8 +1414,8 @@ export function getProjectNavigationSections(): Array<{ id: string; label: strin
 
 export function redactSecrets(value: string | undefined): string {
   if (!value) return "Not configured";
-  if (value.length <= 8) return "••••";
-  return `${value.slice(0, 3)}••••${value.slice(-3)}`;
+  if (value.length <= 8) return "â€¢â€¢â€¢â€¢";
+  return `${value.slice(0, 3)}â€¢â€¢â€¢â€¢${value.slice(-3)}`;
 }
 
 export function providerSupportsLocalHost(provider: ProviderConfig): boolean {
@@ -1423,5 +1423,5 @@ export function providerSupportsLocalHost(provider: ProviderConfig): boolean {
 }
 
 export function getRecommendationText(project: Project): string {
-  return `Recommended route: ${project.scenarios[2]?.label ?? "Balanced"} — a cost-aware mix of deterministic controls and selective model usage.`;
+  return `Recommended route: ${project.scenarios[2]?.label ?? "Balanced"} â€” a cost-aware mix of deterministic controls and selective model usage.`;
 }

@@ -46,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const input = raw as BuildwiseInput;
 
-  // 3. Decision spine — if this fails the whole request fails
+  // 3. Decision spine - if this fails the whole request fails
   let decisionSpine: DecisionSpineOutput;
   try {
     decisionSpine = runDecisionSpine(input);
@@ -60,10 +60,10 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // 4. Modules — per-module errors are handled inside runModules
+  // 4. Modules - per-module errors are handled inside runModules
   const modules = runModules(input, decisionSpine);
 
-  // 5. Execution strategy — gracefully degrade to null on failure
+  // 5. Execution strategy - gracefully degrade to null on failure
   let executionStrategy: ExecutionStrategy | null = null;
   try {
     executionStrategy = generateExecutionStrategy(input, decisionSpine, modules);
