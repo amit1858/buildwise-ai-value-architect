@@ -148,6 +148,8 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
           </header>
 
           {activeSection === "spine" && <SpinePanel project={project} />}
+          {activeSection === "suitability" && <SuitabilityPanel project={project} />}
+          {activeSection === "build-path" && <BuildPathPanel project={project} />}
           {activeSection === "workflow" && <WorkflowPanel project={project} onUpdate={(next) => updateProject((current) => recalculateProjectFromTasks(current, next.tasks))} />}
           {activeSection === "scenarios" && <ScenariosPanel project={project} selectedScenario={selectedScenario} onSelect={setSelectedScenario} />}
           {activeSection === "prompts" && <PromptPanel project={project} />}
@@ -164,6 +166,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
             });
           }} />}
           {activeSection === "blueprint" && <BlueprintPanel project={project} estimate={estimate} />}
+          {activeSection === "build-kit" && <BuildKitPanel project={project} estimate={estimate} />}
         </main>
 
         <aside className="w-full border-t border-stone-200 bg-white p-4 lg:w-80 lg:border-l lg:border-t-0">
@@ -192,6 +195,31 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
       </div>
     </div>
   );
+}
+
+function SuitabilityPanel({ project }: { project: Project }) {
+  const deterministic = project.tasks.filter((task) => !task.needsLLM).length;
+  const human = project.tasks.filter((task) => task.humanReviewPolicy !== "Never").length;
+  const classification = project.input.qualitySensitivity === "critical" || project.input.dataSensitivity === "regulated" ? "Hybrid AI plus human review" : deterministic >= 2 ? "Search/retrieval with selective language-model assistance" : "General-purpose language model with governance controls";
+  return <div className="space-y-6">
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI suitability assessment</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">{classification}</h3><p className="mt-3 max-w-3xl text-sm leading-6 text-stone-600">BuildWise separates deterministic rules, retrieval, model-assisted work, and human decisions before selecting a model or build path.</p></div>
+    <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Deterministic tasks" value={`${deterministic} of ${project.tasks.length}`} /><MetricCard label="Human-review gates" value={`${human} of ${project.tasks.length}`} /><MetricCard label="Quality sensitivity" value={project.input.qualitySensitivity} /></div>
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-sm font-semibold text-stone-900">Decision rule</div><p className="mt-2 text-sm leading-6 text-stone-600">Use deterministic execution where confidence is high, retrieval before generation, and explicit human review for consequential outcomes. Model choice follows the task contract rather than the other way around.</p></div>
+  </div>;
+}
+
+function BuildPathPanel({ project }: { project: Project }) {
+  const paths = project.buildPaths ?? [];
+  return <div className="space-y-6">
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Choose build path</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">Build path recommendation</h3><p className="mt-2 text-sm text-stone-600">Compare delivery speed, control, governance, and ownership before committing to a platform or runtime.</p></div>
+    <div className="grid gap-4 lg:grid-cols-3">{paths.map((path) => <div key={path.id} className={`rounded-2xl border p-5 shadow-sm ${path.id === project.recommendedBuildPath ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-900"}`}><div className="flex items-center justify-between"><h4 className="text-lg font-semibold">{path.label}</h4><span className="text-sm font-semibold">{path.fitScore}% fit</span></div><p className={`mt-3 text-sm leading-6 ${path.id === project.recommendedBuildPath ? "text-stone-200" : "text-stone-600"}`}>{path.summary}</p><div className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{path.id === project.recommendedBuildPath ? "Recommended" : "Alternative"}</div><ul className="mt-3 space-y-2 text-sm">{path.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul><div className="mt-4 text-xs leading-5 opacity-80">Trade-off: {path.tradeoffs[0]}</div></div>)}</div>
+  </div>;
+}
+
+function BuildKitPanel({ project, estimate }: { project: Project; estimate: ScenarioMetric | null }) {
+  const path = project.buildPaths?.find((item) => item.id === project.recommendedBuildPath);
+  const markdown = `# ${project.name} build kit\n\nRecommended path: ${path?.label ?? "Hybrid"}\n\n## Executive brief\n${project.input.businessOutcome}\n\n## Workflow\n${project.tasks.map((task) => `- ${task.name}: ${task.recommendedExecutionMethod}`).join("\n")}\n\n## Economics\n${estimate?.label ?? "Balanced"}: ${estimate ? formatMoney(estimate.monthlyCost) : "Pricing unavailable"} per month.\n\n## Ownership\n${path?.ownership.join("; ") ?? "Define ownership for operations, engineering, and risk."}`;
+  return <div className="space-y-6"><div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Build kit</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">Implementation-ready handoff</h3><p className="mt-2 text-sm leading-6 text-stone-600">A path-specific brief for engineering, operations, and governance owners. The full artifact pack will expand from this contract.</p><div className="mt-5 flex flex-wrap gap-3"><button onClick={() => navigator.clipboard?.writeText(markdown)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Copy build kit</button><button onClick={() => { const blob = new Blob([markdown], { type: "text/markdown" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = "buildwise-build-kit.md"; anchor.click(); URL.revokeObjectURL(url); }} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download Markdown</button></div></div><div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><pre className="whitespace-pre-wrap text-sm leading-6 text-stone-700">{markdown}</pre></div></div>;
 }
 
 function SpinePanel({ project }: { project: Project }) {

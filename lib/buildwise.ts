@@ -3,6 +3,7 @@ import { z } from "zod";
 export type QualitySensitivity = "standard" | "high" | "critical";
 export type WorkloadMode = "batch" | "real-time" | "mixed";
 export type BuilderPreference = "pro-code" | "low-code" | "architecture";
+export type BuildPathId = "low-code" | "pro-code" | "hybrid";
 export type ScenarioId = "baseline" | "economy" | "balanced" | "assurance";
 export type ProviderKind =
   | "azure-openai"
@@ -122,6 +123,16 @@ export interface WorkloadSpine {
   deterministicControls: string[];
   mvpWedge: string;
   why: string[];
+}
+
+export interface BuildPathRecommendation {
+  id: BuildPathId;
+  label: string;
+  fitScore: number;
+  summary: string;
+  strengths: string[];
+  tradeoffs: string[];
+  ownership: string[];
 }
 
 export interface WorkflowTask {
@@ -352,6 +363,8 @@ export interface Project {
   providerConfig: ProviderConfig | null;
   testRuns: ControlledTestRecord[];
   calibration: CalibrationState;
+  buildPaths?: BuildPathRecommendation[];
+  recommendedBuildPath?: BuildPathId;
 }
 
 export const exampleUseCases: IntakeForm[] = [
@@ -1344,7 +1357,22 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
     providerConfig: null,
     testRuns: [],
     calibration: { inputMultiplier: 1, outputMultiplier: 1, sampleCount: 0 },
+    buildPaths: deriveBuildPaths(cleaned, tasks),
+    recommendedBuildPath: cleaned.builderPreference === "low-code" ? "low-code" : cleaned.builderPreference === "architecture" ? "hybrid" : "pro-code",
   };
+}
+
+export function deriveBuildPaths(input: IntakeForm, tasks: WorkflowTask[]): BuildPathRecommendation[] {
+  const highRisk = tasks.filter((task) => task.riskLevel === "High" || task.riskLevel === "Critical").length;
+  const deterministic = tasks.filter((task) => !task.needsLLM).length;
+  const lowCodeScore = Math.max(45, Math.min(92, 72 + deterministic * 5 - highRisk * 4 - (input.dataResidency ? 8 : 0)));
+  const proCodeScore = Math.max(52, Math.min(95, 76 + (input.externalProviders ? 5 : 0) + highRisk * 3 + (input.qualitySensitivity === "critical" ? 6 : 0)));
+  const hybridScore = Math.max(58, Math.min(96, Math.round((lowCodeScore + proCodeScore) / 2) + (input.humanReview ? 4 : 0)));
+  return [
+    { id: "low-code", label: "Low-code", fitScore: lowCodeScore, summary: "Fastest path for governed workflows that can stay inside approved connectors and deterministic controls.", strengths: ["Shorter time to pilot", "Business-owner visibility", "Strong connector reuse"], tradeoffs: ["Less control over custom retrieval and evaluation", "Platform limits may surface at scale"], ownership: ["Operations owns rules and review queues", "Platform team owns connectors and environments"] },
+    { id: "pro-code", label: "Pro-code", fitScore: proCodeScore, summary: "Best path when custom retrieval, evaluation, privacy, or integration control is the primary constraint.", strengths: ["Maximum control over routing and observability", "Easier custom evaluation and provider abstraction", "Better fit for regulated or high-risk logic"], tradeoffs: ["Higher engineering investment", "Longer initial delivery runway"], ownership: ["Engineering owns runtime and evaluation", "Product and risk owners approve policy gates"] },
+    { id: "hybrid", label: "Hybrid", fitScore: hybridScore, summary: "Combines low-code operational surfaces with pro-code intelligence services and policy controls.", strengths: ["Balances speed and control", "Clear separation of workflow and intelligence", "Supports progressive hardening"], tradeoffs: ["Requires explicit interface ownership", "Two delivery toolchains to govern"], ownership: ["Operations owns orchestration surfaces", "Engineering owns intelligence and integration contracts"] },
+  ];
 }
 
 export function buildDemoProject(): Project {
@@ -1373,10 +1401,13 @@ export function recalculateProjectFromTasks(project: Project, tasks: WorkflowTas
 export function getProjectNavigationSections(): Array<{ id: string; label: string; href: string }> {
   return [
     { id: "spine", label: "Workload spine", href: "spine" },
+    { id: "suitability", label: "AI suitability", href: "suitability" },
+    { id: "build-path", label: "Build path", href: "build-path" },
     { id: "workflow", label: "Workflow", href: "workflow" },
     { id: "scenarios", label: "Scenarios", href: "scenarios" },
     { id: "prompts", label: "Prompts", href: "prompts" },
     { id: "test", label: "Controlled test", href: "test" },
+    { id: "build-kit", label: "Build kit", href: "build-kit" },
     { id: "blueprint", label: "Blueprint", href: "blueprint" },
   ];
 }
