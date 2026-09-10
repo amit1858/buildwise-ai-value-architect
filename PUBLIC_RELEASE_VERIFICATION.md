@@ -11,7 +11,7 @@
 | Public evidence package | `c5cb93865468010fba1c187c6ed86d4ef8d92055` | `34432491514` | Browser and security evidence |
 | Metadata/report update | `8b3263157f4d13afebcc71c230425e08ab860a6e` | `34432576577` | Deployment metadata |
 | Truthfulness correction | Pending | Pending | New provenance labels, cost formatting, and public controls |
-| Restoration tranche | `fdd2841d6d57cd7bac35ca3acf15b669d96d2faf` | `34450964204` | Suitability, build paths, Build Kit routes, truthful public controls |
+| Restoration tranche | `2527d8526d28bb9bfcddf9303465adcf0bad0a3c` | `34451088353` | Suitability, build paths, Build Kit routes, truthful public controls |
 
 ## Release identity
 
