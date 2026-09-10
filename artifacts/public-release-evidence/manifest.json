@@ -1,9 +1,9 @@
 {
   "repositoryUrl": "https://github.com/amit1858/buildwise-ai-value-architect",
   "deployedUrl": "https://amit1858.github.io/buildwise-ai-value-architect/",
-  "deployedSourceCommit": "d0516218f046cc907d0e778898136151c8dfcaa6",
-  "workflowRunId": "34432224850",
-  "workflowRunUrl": "https://github.com/amit1858/buildwise-ai-value-architect/actions/runs/34432224850",
+  "deployedSourceCommit": "c5cb93865468010fba1c187c6ed86d4ef8d92055",
+  "workflowRunId": "34432491514",
+  "workflowRunUrl": "https://github.com/amit1858/buildwise-ai-value-architect/actions/runs/34432491514",
   "captureSource": "public-github-pages",
   "capturedAt": "2026-09-10T03:11:28Z",
   "artifacts": [
