@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { buildDemoProject, buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
+import { buildCompleteExportBundle, generateBuildArtifacts, generateCopilotInstructionsMarkdown, type BuildArtifact } from "@/lib/build-artifacts";
 import { deleteProject, getProjectById, saveProject } from "@/lib/project-store";
 import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-session";
 import { executeProviderTest } from "@/lib/provider-adapters";
@@ -217,9 +218,76 @@ function BuildPathPanel({ project, onSelect }: { project: Project; onSelect: (pa
 }
 
 function BuildKitPanel({ project, estimate }: { project: Project; estimate: ScenarioMetric | null }) {
-  const path = project.buildPaths?.find((item) => item.id === project.recommendedBuildPath);
-  const markdown = `# ${project.name} build kit\n\nRecommended path: ${path?.label ?? "Hybrid"}\n\n## Executive brief\n${project.input.businessOutcome}\n\n## Workflow\n${project.tasks.map((task) => `- ${task.name}: ${task.recommendedExecutionMethod}`).join("\n")}\n\n## Economics\n${estimate?.label ?? "Balanced"}: ${estimate ? formatMoney(estimate.monthlyCost) : "Pricing unavailable"} per month.\n\n## Ownership\n${path?.ownership.join("; ") ?? "Define ownership for operations, engineering, and risk."}`;
-  return <div className="space-y-6"><div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Build kit</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">Implementation-ready handoff</h3><p className="mt-2 text-sm leading-6 text-stone-600">A path-specific brief for engineering, operations, and governance owners. The full artifact pack will expand from this contract.</p><div className="mt-5 flex flex-wrap gap-3"><button onClick={() => navigator.clipboard?.writeText(markdown)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Copy build kit</button><button onClick={() => { const blob = new Blob([markdown], { type: "text/markdown" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = "buildwise-build-kit.md"; anchor.click(); URL.revokeObjectURL(url); }} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download Markdown</button></div></div><div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><pre className="whitespace-pre-wrap text-sm leading-6 text-stone-700">{markdown}</pre></div></div>;
+  const [selectedArtifactId, setSelectedArtifactId] = useState<string>("executive-brief");
+  const artifacts = useMemo<BuildArtifact[]>(() => generateBuildArtifacts(project, estimate?.id ?? "balanced"), [project, estimate]);
+  const selectedArtifact = artifacts.find((artifact) => artifact.id === selectedArtifactId) ?? artifacts[0];
+
+  const downloadBlob = (content: string, fileName: string) => {
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportBundle = buildCompleteExportBundle(project, estimate?.id ?? "balanced");
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Build kit</div>
+        <h3 className="mt-3 text-2xl font-semibold text-stone-900">Project artifact pack</h3>
+        <p className="mt-2 text-sm leading-6 text-stone-600">Each artifact is generated from the current project state, selected scenario, and recommended build path. Public-demo exports remain credential-free.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button onClick={() => navigator.clipboard?.writeText(selectedArtifact.content)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Copy selected artifact</button>
+          <button onClick={() => downloadBlob(selectedArtifact.content, selectedArtifact.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download selected artifact</button>
+          <button onClick={() => downloadBlob(exportBundle.combinedMarkdown, exportBundle.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download complete Build Kit</button>
+          <button onClick={() => downloadBlob(generateCopilotInstructionsMarkdown(project), ".github/copilot-instructions.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download .github/copilot-instructions.md</button>
+          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "github-copilot-agent-prompt")?.content ?? "", "13-github-copilot-agent-prompt.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download GitHub Copilot prompt</button>
+          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "low-code-implementation-guide")?.content ?? "", "14-low-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Low-code guide</button>
+          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "pro-code-implementation-guide")?.content ?? "", "15-pro-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Pro-code guide</button>
+          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "hybrid-responsibility-map")?.content ?? "", "16-hybrid-responsibility-map.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Hybrid responsibility map</button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Artifacts</div>
+          <div className="space-y-2">
+            {artifacts.map((artifact) => (
+              <button
+                key={artifact.id}
+                type="button"
+                onClick={() => setSelectedArtifactId(artifact.id)}
+                className={selectedArtifact?.id === artifact.id ? "w-full rounded-xl bg-stone-900 px-3 py-3 text-left text-sm font-medium text-white" : "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-left text-sm font-medium text-stone-700 hover:border-stone-400"}
+              >
+                <div>{artifact.label}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] opacity-70">{artifact.fileName}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Selected artifact</div>
+              <h4 className="mt-2 text-2xl font-semibold text-stone-900">{selectedArtifact.label}</h4>
+            </div>
+            <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">{selectedArtifact.sourceScenario}</div>
+          </div>
+          <div className="mb-5 grid gap-2 text-xs text-stone-600 sm:grid-cols-3">
+            <div>Project: {selectedArtifact.projectName}</div>
+            <div>Build path: {selectedArtifact.buildPath}</div>
+            <div>Provenance: {selectedArtifact.provenance}</div>
+          </div>
+          <pre className="whitespace-pre-wrap rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-700">{selectedArtifact.content}</pre>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SpinePanel({ project }: { project: Project }) {
