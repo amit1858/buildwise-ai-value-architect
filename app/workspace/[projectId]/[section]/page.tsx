@@ -13,5 +13,5 @@ export function generateStaticParams() {
 
 export default async function WorkspaceRoute({ params }: { params: Promise<{ projectId: string; section: string }> }) {
   const { projectId, section } = await params;
-  return <WorkspaceShell projectId={projectId} section={section ?? "spine"} />;
+  return <WorkspaceShell projectId={projectId} section={section ?? "spine"} publicDemo={process.env.PUBLIC_DEMO === "true"} />;
 }

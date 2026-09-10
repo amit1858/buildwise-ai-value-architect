@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { buildDemoProject, buildProjectFromForm, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
 import { deleteProject, getProjectById, saveProject } from "@/lib/project-store";
 import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-session";
+import { executeProviderTest } from "@/lib/provider-adapters";
 
-export function WorkspaceShell({ projectId, section }: { projectId: string; section: string }) {
+export function WorkspaceShell({ projectId, section, publicDemo = false }: { projectId: string; section: string; publicDemo?: boolean }) {
   const [project, setProject] = useState<Project | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("balanced");
   const [lastTest, setLastTest] = useState<ControlledTestRecord | null>(null);
@@ -48,42 +49,47 @@ export function WorkspaceShell({ projectId, section }: { projectId: string; sect
       return;
     }
     if (!window.confirm(`Run one controlled ${mode === "demo" ? "demo" : "provider"} test for ${chosen.name}? No automatic calls are made.`)) return;
-    const response = await fetch("/api/providers/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        provider: provider ?? { id: "demo", kind: "openai-compatible", displayName: "BuildWise Demo", model: chosen.primaryModel, requiresKey: false, keyLabel: "No key required", status: "Connected" },
-        request: {
-          taskName: chosen.name,
-          prompt: project.prompts.find((prompt) => prompt.id === chosen.id)?.optimisedPrompt ?? chosen.promptStrategy,
-          systemPrompt: "Return a concise, schema-safe result.",
-          model: chosen.primaryModel,
-          maxOutputTokens: chosen.estimatedOutputTokens,
-          structuredOutput: project.input.structuredOutput,
-          mode: mode === "demo" ? "mock" : mode === "mocked-byok" ? "mock" : "live",
-        },
-      }),
-    });
-    const payload = (await response.json()) as { ok?: boolean; result?: { providerId: string; model: string; content: string; inputTokens: number; outputTokens: number; cachedTokens: number; latencyMs: number; finishReason: string; actualCost: number | null; projectedMonthlyCost: number | null; pricingSource: string; provenance: "demo-simulation" | "mock-adapter" | "live-provider"; isStructuredValid: boolean; warnings: string[] }; message?: string };
-    if (!response.ok || !payload.ok || !payload.result) {
-      window.alert(payload.message ?? "Controlled test failed.");
-      return;
+    const demoProvider = provider ?? { id: "demo", kind: "openai-compatible" as const, displayName: "BuildWise Demo", model: chosen.primaryModel, requiresKey: false, keyLabel: "No key required", status: "Connected" as const };
+    const request = {
+      taskName: chosen.name,
+      prompt: project.prompts.find((prompt) => prompt.id === chosen.id)?.optimisedPrompt ?? chosen.promptStrategy,
+      systemPrompt: "Return a concise, schema-safe result.",
+      model: chosen.primaryModel,
+      maxOutputTokens: chosen.estimatedOutputTokens,
+      structuredOutput: project.input.structuredOutput,
+      mode: mode === "demo" ? "mock" as const : mode === "mocked-byok" ? "mock" as const : "live" as const,
+    };
+    let result: { providerId: string; model: string; content: string; inputTokens: number; outputTokens: number; cachedTokens: number; latencyMs: number; finishReason: string; actualCost: number | null; projectedMonthlyCost: number | null; pricingSource: string; provenance: "demo-simulation" | "mock-adapter" | "live-provider"; isStructuredValid: boolean; warnings: string[] };
+    if (publicDemo && mode === "demo") {
+      result = { ...await executeProviderTest(demoProvider, request), provenance: "demo-simulation" };
+    } else {
+      const response = await fetch("/api/providers/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: demoProvider, request }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; result?: typeof result; message?: string };
+      if (!response.ok || !payload.ok || !payload.result) {
+        window.alert(payload.message ?? "Controlled test failed.");
+        return;
+      }
+      result = payload.result;
     }
     const record: ControlledTestRecord = {
-      providerId: payload.result.providerId,
-      model: payload.result.model,
-      actualInputTokens: payload.result.inputTokens,
-      actualOutputTokens: payload.result.outputTokens,
-      cachedTokens: payload.result.cachedTokens,
-      latencyMs: payload.result.latencyMs,
-      finishReason: payload.result.finishReason,
-      actualCost: payload.result.actualCost,
-      projectedMonthlyCost: payload.result.projectedMonthlyCost,
-      pricingSource: payload.result.pricingSource,
-      provenance: mode === "demo" ? "demo-simulation" : payload.result.provenance,
-      structuredValid: payload.result.isStructuredValid,
-      output: payload.result.content,
-      warnings: payload.result.warnings,
+      providerId: result.providerId,
+      model: result.model,
+      actualInputTokens: result.inputTokens,
+      actualOutputTokens: result.outputTokens,
+      cachedTokens: result.cachedTokens,
+      latencyMs: result.latencyMs,
+      finishReason: result.finishReason,
+      actualCost: result.actualCost,
+      projectedMonthlyCost: result.projectedMonthlyCost,
+      pricingSource: result.pricingSource,
+      provenance: mode === "demo" ? "demo-simulation" : result.provenance,
+      structuredValid: result.isStructuredValid,
+      output: result.content,
+      warnings: result.warnings,
       id: `test-${Date.now()}`,
       mode,
       providerName: provider?.displayName ?? "BuildWise Demo",
