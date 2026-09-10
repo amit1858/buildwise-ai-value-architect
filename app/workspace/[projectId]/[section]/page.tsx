@@ -3,10 +3,13 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 export function generateStaticParams() {
   return [
     "spine",
+    "suitability",
+    "build-path",
     "workflow",
     "scenarios",
     "prompts",
     "test",
+    "build-kit",
     "blueprint",
   ].map((section) => ({ projectId: "demo-support-project", section }));
 }

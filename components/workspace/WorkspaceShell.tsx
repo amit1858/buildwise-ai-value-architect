@@ -149,7 +149,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
 
           {activeSection === "spine" && <SpinePanel project={project} />}
           {activeSection === "suitability" && <SuitabilityPanel project={project} />}
-          {activeSection === "build-path" && <BuildPathPanel project={project} />}
+          {activeSection === "build-path" && <BuildPathPanel project={project} onSelect={(pathId) => updateProject((current) => ({ ...current, recommendedBuildPath: pathId, updatedAt: new Date().toISOString() }))} />}
           {activeSection === "workflow" && <WorkflowPanel project={project} onUpdate={(next) => updateProject((current) => recalculateProjectFromTasks(current, next.tasks))} />}
           {activeSection === "scenarios" && <ScenariosPanel project={project} selectedScenario={selectedScenario} onSelect={setSelectedScenario} />}
           {activeSection === "prompts" && <PromptPanel project={project} />}
@@ -208,11 +208,11 @@ function SuitabilityPanel({ project }: { project: Project }) {
   </div>;
 }
 
-function BuildPathPanel({ project }: { project: Project }) {
+function BuildPathPanel({ project, onSelect }: { project: Project; onSelect: (pathId: NonNullable<Project["recommendedBuildPath"]>) => void }) {
   const paths = project.buildPaths ?? [];
   return <div className="space-y-6">
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Choose build path</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">Build path recommendation</h3><p className="mt-2 text-sm text-stone-600">Compare delivery speed, control, governance, and ownership before committing to a platform or runtime.</p></div>
-    <div className="grid gap-4 lg:grid-cols-3">{paths.map((path) => <div key={path.id} className={`rounded-2xl border p-5 shadow-sm ${path.id === project.recommendedBuildPath ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-900"}`}><div className="flex items-center justify-between"><h4 className="text-lg font-semibold">{path.label}</h4><span className="text-sm font-semibold">{path.fitScore}% fit</span></div><p className={`mt-3 text-sm leading-6 ${path.id === project.recommendedBuildPath ? "text-stone-200" : "text-stone-600"}`}>{path.summary}</p><div className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{path.id === project.recommendedBuildPath ? "Recommended" : "Alternative"}</div><ul className="mt-3 space-y-2 text-sm">{path.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul><div className="mt-4 text-xs leading-5 opacity-80">Trade-off: {path.tradeoffs[0]}</div></div>)}</div>
+    <div className="grid gap-4 lg:grid-cols-3">{paths.map((path) => <div key={path.id} className={`rounded-2xl border p-5 shadow-sm ${path.id === project.recommendedBuildPath ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-900"}`}><div className="flex items-center justify-between"><h4 className="text-lg font-semibold">{path.label}</h4><span className="text-sm font-semibold">{path.fitScore}% fit</span></div><p className={`mt-3 text-sm leading-6 ${path.id === project.recommendedBuildPath ? "text-stone-200" : "text-stone-600"}`}>{path.summary}</p><div className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{path.id === project.recommendedBuildPath ? "Selected recommendation" : "Alternative"}</div><ul className="mt-3 space-y-2 text-sm">{path.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul><div className="mt-4 text-xs leading-5 opacity-80">Trade-off: {path.tradeoffs[0]}</div><button type="button" onClick={() => onSelect(path.id)} className={path.id === project.recommendedBuildPath ? "mt-5 rounded-full border border-white/40 px-4 py-2 text-sm font-medium text-white" : "mt-5 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white"}>{path.id === project.recommendedBuildPath ? "Selected" : "Use this path"}</button></div>)}</div>
   </div>;
 }
 
