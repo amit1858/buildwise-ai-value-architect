@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { buildDemoProject, buildProjectFromForm, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
+import { buildDemoProject, buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
 import { deleteProject, getProjectById, saveProject } from "@/lib/project-store";
 import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-session";
 import { executeProviderTest } from "@/lib/provider-adapters";
@@ -151,7 +151,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
           {activeSection === "workflow" && <WorkflowPanel project={project} onUpdate={(next) => updateProject((current) => recalculateProjectFromTasks(current, next.tasks))} />}
           {activeSection === "scenarios" && <ScenariosPanel project={project} selectedScenario={selectedScenario} onSelect={setSelectedScenario} />}
           {activeSection === "prompts" && <PromptPanel project={project} />}
-          {activeSection === "test" && <TestPanel project={project} lastTest={lastTest} onRun={runControlledTest} onFeedback={(feedback) => {
+          {activeSection === "test" && <TestPanel project={project} lastTest={lastTest} publicDemo={publicDemo} onRun={runControlledTest} onFeedback={(feedback) => {
             if (!lastTest) return;
             const updated = { ...lastTest, feedback };
             setLastTest(updated);
@@ -416,7 +416,7 @@ function PromptPanel({ project }: { project: Project }) {
   );
 }
 
-function TestPanel({ project, lastTest, onRun, onFeedback }: { project: Project; lastTest: ControlledTestRecord | null; onRun: (taskId: string, mode: "demo" | "mocked-byok" | "live-byok") => void; onFeedback: (feedback: "accepted" | "revise" | "rejected") => void }) {
+function TestPanel({ project, lastTest, publicDemo, onRun, onFeedback }: { project: Project; lastTest: ControlledTestRecord | null; publicDemo: boolean; onRun: (taskId: string, mode: "demo" | "mocked-byok" | "live-byok") => void; onFeedback: (feedback: "accepted" | "revise" | "rejected") => void }) {
   const [selectedTaskId, setSelectedTaskId] = useState(project.tasks[0]?.id ?? "");
   const connected = project.providerConfig?.status === "Connected";
   const selectedTask = project.tasks.find((task) => task.id === selectedTaskId) ?? project.tasks[0];
@@ -431,26 +431,26 @@ function TestPanel({ project, lastTest, onRun, onFeedback }: { project: Project;
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <button onClick={() => onRun(selectedTask.id, "demo")} className="rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 hover:border-stone-500">Run demo test</button>
-          <button onClick={() => onRun(selectedTask.id, "mocked-byok")} className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 hover:border-amber-500">Run mocked BYOK test</button>
-          <button onClick={() => onRun(selectedTask.id, "live-byok")} disabled={!connected} className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Run live provider test</button>
+          {!publicDemo && <button onClick={() => onRun(selectedTask.id, "mocked-byok")} className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 hover:border-amber-500">Run mocked BYOK test</button>}
+          {publicDemo ? <><button type="button" disabled className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 disabled:cursor-not-allowed disabled:opacity-70">Live provider test</button><span className="max-w-md text-xs text-stone-500">Available in the server-hosted BuildWise application after configuring a provider. GitHub Pages never sends provider credentials.</span></> : <button onClick={() => onRun(selectedTask.id, "live-byok")} disabled={!connected} className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Run live provider test</button>}
         </div>
         <div className="mt-4 text-xs text-stone-500">Every run is explicit. BuildWise never starts a paid call automatically.</div>
       </div>
 
       {lastTest && (
         <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Actual vs estimated</div>
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><strong>{lastTest.provenance === "demo-simulation" ? "Simulated demo result" : lastTest.provenance === "mock-adapter" ? "Mock adapter result" : "Live provider result"}</strong><div className="mt-1">{lastTest.provenance === "demo-simulation" ? "Simulated usage · Estimated production cost" : lastTest.provenance === "mock-adapter" ? "Mock-reported usage · No external provider call was made · For integration verification only" : `Provider-reported usage · Measured latency · Calculated cost using ${lastTest.pricingSource ?? "pricing source"}`}</div></div>
+          <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">{lastTest.provenance === "demo-simulation" ? "Simulation vs Design Estimate" : "Provider Result vs Design Estimate"}</div>
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><strong>{lastTest.provenance === "demo-simulation" ? "Simulated demo result" : lastTest.provenance === "mock-adapter" ? "Mock adapter result" : "Provider reported result"}</strong><div className="mt-1">{lastTest.provenance === "demo-simulation" ? "Generated locally using the demo adapter. This validates the product flow, not provider availability or model quality. No paid provider call was made." : lastTest.provenance === "mock-adapter" ? "Contract-shaped mock adapter response. No external provider call was made." : `Provider-reported usage · Measured latency · Calculated cost using ${lastTest.pricingSource ?? "pricing source"}`}</div></div>
           <div className="grid gap-4 md:grid-cols-5">
-            <InfoLine label={lastTest.provenance === "live-provider" ? "Provider-reported input" : "Estimated input"} value={`${lastTest.actualInputTokens.toLocaleString("en-US")} tokens`} />
-            <InfoLine label={lastTest.provenance === "live-provider" ? "Provider-reported output" : "Estimated output"} value={`${lastTest.actualOutputTokens.toLocaleString("en-US")} tokens`} />
-            <InfoLine label="Latency" value={`${lastTest.latencyMs} ms`} />
-            <InfoLine label={lastTest.actualCost !== null ? "Calculated test-call cost" : "Call cost unavailable"} value={lastTest.actualCost !== null ? formatMoney(lastTest.actualCost) : "Not calculated"} />
+            <InfoLine label={lastTest.provenance === "live-provider" ? "Provider-reported input" : "Simulated input"} value={`${lastTest.actualInputTokens.toLocaleString("en-US")} tokens`} />
+            <InfoLine label={lastTest.provenance === "live-provider" ? "Provider-reported output" : "Simulated output"} value={`${lastTest.actualOutputTokens.toLocaleString("en-US")} tokens`} />
+            <InfoLine label={lastTest.provenance === "live-provider" ? "Provider-reported latency" : "Simulated latency"} value={`${lastTest.latencyMs} ms`} />
+            <InfoLine label={lastTest.actualCost !== null ? "Estimated test-call cost" : "Call cost unavailable"} value={lastTest.actualCost !== null ? formatCost(lastTest.actualCost) : "Pricing unavailable"} />
             <InfoLine label="Projected monthly cost" value={lastTest.projectedMonthlyCost === null || lastTest.projectedMonthlyCost === undefined ? "Monthly cost unavailable" : formatMoney(lastTest.projectedMonthlyCost)} />
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <InfoLine label="Estimated input" value={`${lastTest.estimatedInputTokens.toLocaleString("en-US")} tokens`} />
-            <InfoLine label="Estimated output" value={`${lastTest.estimatedOutputTokens.toLocaleString("en-US")} tokens`} />
+            <InfoLine label="Design estimate input" value={`${lastTest.estimatedInputTokens.toLocaleString("en-US")} tokens`} />
+            <InfoLine label="Design estimate output" value={`${lastTest.estimatedOutputTokens.toLocaleString("en-US")} tokens`} />
             <InfoLine label="Finish reason" value={lastTest.finishReason} />
           </div>
           <div className="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700"><div className="font-medium text-stone-900">{lastTest.providerName}</div><div className="mt-2">{lastTest.output}</div><div className="mt-2 text-xs text-stone-500">{lastTest.warnings.join(" ") || "No warnings."}</div></div>

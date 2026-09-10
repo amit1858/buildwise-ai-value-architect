@@ -4,6 +4,12 @@
 
 Productization status: the seeded demo is now prepared for a GitHub Pages public-demo build. `npm run build:pages` produces the static `out/` artifact with the fixed seeded route `/workspace/demo-support-project/*`; provider validation and provider-backed execution routes return HTTP 403 when `PUBLIC_DEMO=true`. No live provider capability is claimed.
 
+## Phase 0 truthfulness correction
+
+The next release separates `Design estimate`, `Demo simulation`, `Mock adapter`, `Provider reported`, and `Verified live` terminology. Simulated output is never labelled actual or observed. The public controlled-test surface keeps `Run demo test`, renames the second public-safe action to `Run local adapter simulation` where applicable, and disables live provider testing with an explanation that credentials cannot be entered or sent through GitHub Pages.
+
+Cost display now preserves exact zero as `$0.00`, displays positive sub-cent values with four decimal places, reports missing pricing as `Pricing unavailable`, and reports deterministic no-model-call work as `Not applicable`. The release evidence must be regenerated from the post-correction commit; older screenshots remain historical evidence only.
+
 Implementation commit: `80115a20127002538dcdc51ba60ade75679fe24d`. Evidence-only packaging may follow; every release-candidate manifest entry records this implementation commit.
 
 This report describes the current repository state. Demo figures, browser evidence, and the golden-value contract are generated from the same canonical calculation engine in `lib/buildwise.ts`.

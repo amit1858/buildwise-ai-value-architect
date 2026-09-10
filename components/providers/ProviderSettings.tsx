@@ -79,7 +79,7 @@ const initialProviders: ProviderConfig[] = [
   },
 ];
 
-export function ProviderSettings() {
+export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean }) {
   const [providers, setProviders] = useState<ProviderConfig[]>(() => {
     const partial = readSessionProviderSettings();
     if (partial.length === 0) return initialProviders;
@@ -90,7 +90,7 @@ export function ProviderSettings() {
   });
   const [selectedProviderId, setSelectedProviderId] = useState<string>("openai");
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
-  const [workingMode, setWorkingMode] = useState<OperatingMode>("demo");
+  const [workingMode, setWorkingMode] = useState<OperatingMode>(publicDemo ? "demo" : "demo");
   const [busyProviderId, setBusyProviderId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,6 +108,7 @@ export function ProviderSettings() {
   };
 
   const validateProvider = async (provider: ProviderConfig) => {
+    if (publicDemo) return;
     setBusyProviderId(provider.id);
     updateProvider(provider.id, "status", "Validating");
     try {
@@ -180,6 +181,7 @@ export function ProviderSettings() {
                   <button
                     key={mode}
                     type="button"
+                    disabled={publicDemo && mode === "live-byok"}
                     onClick={() => setWorkingMode(mode)}
                     className={workingMode === mode ? "rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white" : "rounded-full px-4 py-2 text-sm font-medium text-stone-600"}
                   >
@@ -195,8 +197,10 @@ export function ProviderSettings() {
           </div>
 
           <div className="mt-4 text-sm text-stone-600">
-            {workingMode === "demo"
-              ? "Demo mode remains fully functional without provider credentials. Live BYOK becomes available only after at least one provider validates successfully."
+            {publicDemo
+            ? "GitHub Pages is a credential-free public demo. Provider keys cannot be entered, validated, or used here. Live BYOK is available only in the server-hosted BuildWise application."
+            : workingMode === "demo"
+            ? "Demo mode remains fully functional without provider credentials. Live BYOK becomes available only after at least one provider validates successfully."
               : connectedCount === 0
                 ? "Live BYOK is unavailable until a provider is successfully validated."
                 : "Live BYOK is active for the current session and no provider secret is retained after refresh."}
@@ -284,6 +288,7 @@ export function ProviderSettings() {
                           type={showKeys[selectedProvider.id] ? "text" : "password"}
                           value={selectedProvider.apiKey ?? ""}
                           onChange={(e) => updateProvider(selectedProvider.id, "apiKey", e.target.value)}
+                          disabled={publicDemo}
                           className="field flex-1"
                         />
                         <button type="button" onClick={() => setShowKeys((current) => ({ ...current, [selectedProvider.id]: !current[selectedProvider.id] }))} className="rounded-full border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700">
@@ -296,7 +301,7 @@ export function ProviderSettings() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button type="button" disabled={busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">
+                  <button type="button" disabled={publicDemo || busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">
                     {busyProviderId === selectedProvider.id ? "Validating…" : "Validate connection"}
                   </button>
                   <button type="button" onClick={() => clearProvider(selectedProvider.id)} className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700">Clear configuration</button>

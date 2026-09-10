@@ -658,6 +658,16 @@ export function calculateScenarioCost(
 }
 
 export function formatMoney(amount: number, currency = "USD") {
+  return formatCost(amount, "priced", currency);
+}
+
+export function formatCost(amount: number | null | undefined, kind: "priced" | "unavailable" | "deterministic" = "priced", currency = "USD") {
+  if (kind === "deterministic") return "Not applicable";
+  if (kind === "unavailable" || amount === null || amount === undefined) return "Pricing unavailable";
+  if (amount === 0) return "$0.00";
+  if (amount > 0 && amount < 0.01) {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(amount);
+  }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,

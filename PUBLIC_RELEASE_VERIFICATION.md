@@ -1,6 +1,16 @@
 # Public release verification
 
-**Status:** Verified against the deployed GitHub Pages site after the public-demo controlled-test fix.
+**Status:** Historical baseline; the next verification run must replace this record after the truthfulness correction is deployed.
+
+## Evidence lineage
+
+| Stage | Source commit | Workflow | Meaning |
+|---|---|---|---|
+| Initial public deployment | `ba18badd89a925caaeedc9990a6458efcc3e9350` | `34390382011` | First public static demo |
+| Controlled-test routing fix | `d0516218f046cc907d0e778898136151c8dfcaa6` | `34432224850` | Removed the public base-path API failure |
+| Public evidence package | `c5cb93865468010fba1c187c6ed86d4ef8d92055` | `34432491514` | Browser and security evidence |
+| Metadata/report update | `8b3263157f4d13afebcc71c230425e08ab860a6e` | `34432576577` | Deployment metadata |
+| Truthfulness correction | Pending | Pending | New provenance labels, cost formatting, and public controls |
 
 ## Release identity
 
