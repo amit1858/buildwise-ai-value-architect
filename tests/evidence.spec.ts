@@ -29,7 +29,7 @@ test.describe("BuildWise final evidence", () => {
     await capture("landing", "/");
     await expect(page.getByText("Customer-support optimisation", { exact: false }).first()).toBeVisible();
     await page.getByRole("button", { name: /try the interactive demo/i }).click();
-    await page.waitForURL(/\/workspace\/.+\/spine/);
+    await expect(page).toHaveURL(/\/workspace\/.+\/spine\/?/, { timeout: 30_000 });
     const projectPath = "/workspace/demo-support-project";
 
     await capture("workload-spine", `${projectPath}/spine`);

@@ -16,7 +16,7 @@ The workspace now exposes AI suitability, selectable Low-code/Pro-code/Hybrid bu
 
 The recommended Balanced policy provides better cost-to-value than the baseline because it uses deterministic routing for high-confidence work, filtered retrieval, prompt caching, schema validation, and escalation only for ambiguous or consequential cases. Baseline applies an advanced model and broad context to every applicable task; Assurance adds stronger validation and review at higher cost; Economy is cheaper but accepts higher review coverage and less reasoning depth. The recommendation is policy-derived rather than a target saving.
 
-Implementation commit: `2527d8526d28bb9bfcddf9303465adcf0bad0a3c`. Pages workflow: `34451088353` (successful). The deployed public URL is `https://amit1858.github.io/buildwise-ai-value-architect/`.
+Implementation commit: `9f48947d304c1d1dc69316e59e0a04195499110b`. Pages workflow: `34451318084` (successful). The deployed public URL is `https://amit1858.github.io/buildwise-ai-value-architect/`.
 
 This report describes the current repository state. Demo figures, browser evidence, and the golden-value contract are generated from the same canonical calculation engine in `lib/buildwise.ts`.
 
@@ -83,7 +83,7 @@ npm run build:pages
 npx playwright test tests/evidence.spec.ts --reporter=line
 ```
 
-Results for deployed source commit `2527d8526d28bb9bfcddf9303465adcf0bad0a3c`: TypeScript passed; ESLint passed; 7 Vitest files / 21 tests passed; static Pages build passed; deployed Playwright evidence journey passed at 1440x1000, 1280x900, 834x1112, and 390x844.
+Results for deployed source commit `9f48947d304c1d1dc69316e59e0a04195499110b`: TypeScript passed; ESLint passed; 7 Vitest files / 21 tests passed; static Pages build passed; deployed Playwright evidence journey passed at 1440x1000, 1280x900, 834x1112, and 390x844.
 
 The release-candidate evidence manifest records full local URLs, themes, provenance modes, build identifiers, source commit, and capture source. It is packaged under `BuildWiseArtifacts/release-candidate/`.
 
