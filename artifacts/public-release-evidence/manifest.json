@@ -1,0 +1,27 @@
+{
+  "repositoryUrl": "https://github.com/amit1858/buildwise-ai-value-architect",
+  "deployedUrl": "https://amit1858.github.io/buildwise-ai-value-architect/",
+  "deployedSourceCommit": "d0516218f046cc907d0e778898136151c8dfcaa6",
+  "workflowRunId": "34432224850",
+  "workflowRunUrl": "https://github.com/amit1858/buildwise-ai-value-architect/actions/runs/34432224850",
+  "captureSource": "public-github-pages",
+  "capturedAt": "2026-09-10T03:11:28Z",
+  "artifacts": [
+    { "filename": "landing-light-desktop-wide.png", "route": "/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "landing-dark-desktop-wide.png", "route": "/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/", "viewport": "1440x1000", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "landing-light-mobile.png", "route": "/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/", "viewport": "390x844", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "landing-dark-mobile.png", "route": "/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/", "viewport": "390x844", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "workload-spine-dark-desktop.png", "route": "/workspace/demo-support-project/spine/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/spine/", "viewport": "1280x900", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "editable-workflow-light-desktop.png", "route": "/workspace/demo-support-project/workflow/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/workflow/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "scenario-comparison-light-desktop-wide.png", "route": "/workspace/demo-support-project/scenarios/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/scenarios/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "scenario-comparison-dark-mobile.png", "route": "/workspace/demo-support-project/scenarios/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/scenarios/", "viewport": "390x844", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "calculation-drawer-dark-desktop-wide.png", "route": "/workspace/demo-support-project/scenarios/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/scenarios/", "viewport": "1440x1000", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "prompt-comparison-light-desktop-wide.png", "route": "/workspace/demo-support-project/prompts/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/prompts/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "controlled-test-preview-dark-desktop.png", "route": "/workspace/demo-support-project/test/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/test/", "viewport": "1280x900", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "simulated-result-light-desktop.png", "route": "/workspace/demo-support-project/test/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/test/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "demo-simulation" },
+    { "filename": "blueprint-light-desktop-wide.png", "route": "/workspace/demo-support-project/blueprint/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/blueprint/", "viewport": "1440x1000", "theme": "light", "provenanceMode": "public-demo" },
+    { "filename": "blueprint-dark-mobile.png", "route": "/workspace/demo-support-project/blueprint/", "fullCaptureUrl": "https://amit1858.github.io/buildwise-ai-value-architect/workspace/demo-support-project/blueprint/", "viewport": "390x844", "theme": "dark", "provenanceMode": "public-demo" },
+    { "filename": "github-repository-overview.png", "route": "repository", "fullCaptureUrl": "https://github.com/amit1858/buildwise-ai-value-architect", "viewport": "1440x1000", "theme": "system", "provenanceMode": "github-public-repository" },
+    { "filename": "successful-pages-workflow.png", "route": "workflow-run", "fullCaptureUrl": "https://github.com/amit1858/buildwise-ai-value-architect/actions/runs/34432224850", "viewport": "1440x1000", "theme": "system", "provenanceMode": "github-actions" }
+  ]
+}
