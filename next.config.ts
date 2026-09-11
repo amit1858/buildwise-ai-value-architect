@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   assetPrefix: basePath ? `${basePath}/` : undefined,
   trailingSlash: isPublicDemo,
   images: { unoptimized: true },
+  env: {
+    NEXT_PUBLIC_BUILDWISE_PUBLIC_DEMO: isPublicDemo ? "true" : "false",
+    NEXT_PUBLIC_BUILDWISE_STANDALONE_URL: process.env.STANDALONE_APP_URL || "",
+  },
 };
 
 export default nextConfig;

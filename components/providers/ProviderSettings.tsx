@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { type OperatingMode, type ProviderConfig, redactSecrets } from "@/lib/buildwise";
+import { modelCatalogue, type OperatingMode, type ProviderConfig, redactSecrets } from "@/lib/buildwise";
+import { NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
 import {
   clearAllSessionProviderSettings,
   getSessionProviderSecret,
@@ -49,9 +50,9 @@ const initialProviders: ProviderConfig[] = [
     id: "nvidia",
     kind: "nvidia",
     displayName: "NVIDIA / NIM",
-    endpoint: "https://integrate.api.nvidia.com",
+    endpoint: "https://integrate.api.nvidia.com/v1",
     apiKey: "",
-    model: "meta/llama-3.1-8b-instruct",
+    model: NVIDIA_BUILD_DEFAULT_MODEL,
     requiresKey: true,
     keyLabel: "API key",
     status: "Not configured",
@@ -80,6 +81,8 @@ const initialProviders: ProviderConfig[] = [
 ];
 
 export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean }) {
+  const isPublicShowcase = publicDemo || process.env.NEXT_PUBLIC_BUILDWISE_PUBLIC_DEMO === "true";
+  const standaloneUrl = process.env.NEXT_PUBLIC_BUILDWISE_STANDALONE_URL;
   const [providers, setProviders] = useState<ProviderConfig[]>(() => {
     const partial = readSessionProviderSettings();
     if (partial.length === 0) return initialProviders;
@@ -92,6 +95,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [workingMode, setWorkingMode] = useState<OperatingMode>(publicDemo ? "demo" : "demo");
   const [busyProviderId, setBusyProviderId] = useState<string | null>(null);
+  const [modelSearch, setModelSearch] = useState("");
 
   useEffect(() => {
     writeSessionProviderSettings(providers.map((provider) => ({ ...provider, apiKey: "" })));
@@ -108,7 +112,17 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
   };
 
   const validateProvider = async (provider: ProviderConfig) => {
-    if (publicDemo) return;
+    const selectedModel = provider.selectedModel || provider.model || provider.deployment;
+    if (isPublicShowcase) {
+      updateProvider(provider.id, "status", "Not configured");
+      updateProvider(provider.id, "validationMessage", "Public showcase mode blocks provider credentials and live validation. Open the standalone application for BYOK testing.");
+      return;
+    }
+    if (!selectedModel?.trim()) {
+      updateProvider(provider.id, "status", "Incomplete");
+      updateProvider(provider.id, "validationMessage", "Select a catalogue model or enter a custom model identifier before validation.");
+      return;
+    }
     setBusyProviderId(provider.id);
     updateProvider(provider.id, "status", "Validating");
     try {
@@ -162,7 +176,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
   const connectedCount = providers.filter((provider) => provider.status === "Connected" && provider.isEnabledForSession).length;
 
   return (
-    <main id="main-content" className="min-h-[100dvh] bg-stone-100 px-6 py-8 text-stone-900">
+    <main id="main-content" className="bw-page min-h-[100dvh] px-6 py-8 text-stone-900">
       <div className="mx-auto max-w-6xl space-y-8">
         <header className="flex items-center justify-between border-b border-stone-300 pb-5">
           <div>
@@ -181,7 +195,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                   <button
                     key={mode}
                     type="button"
-                    disabled={publicDemo && mode === "live-byok"}
+                    disabled={isPublicShowcase && mode === "live-byok"}
                     onClick={() => setWorkingMode(mode)}
                     className={workingMode === mode ? "rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white" : "rounded-full px-4 py-2 text-sm font-medium text-stone-600"}
                   >
@@ -197,7 +211,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
           </div>
 
           <div className="mt-4 text-sm text-stone-600">
-            {publicDemo
+            {isPublicShowcase
             ? "GitHub Pages is a credential-free public demo. Provider keys cannot be entered, validated, or used here. Live BYOK is available only in the server-hosted BuildWise application."
             : workingMode === "demo"
             ? "Demo mode remains fully functional without provider credentials. Live BYOK becomes available only after at least one provider validates successfully."
@@ -205,6 +219,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                 ? "Live BYOK is unavailable until a provider is successfully validated."
                 : "Live BYOK is active for the current session and no provider secret is retained after refresh."}
           </div>
+          {standaloneUrl && <a href={standaloneUrl} className="mt-4 inline-flex rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white">Open standalone application</a>}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -230,7 +245,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button type="button" onClick={() => setSelectedProviderId(provider.id)} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">Configure</button>
-                    <button type="button" onClick={() => updateProvider(provider.id, "isEnabledForSession", !provider.isEnabledForSession)} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">
+                    <button type="button" disabled={isPublicShowcase || provider.status !== "Connected"} onClick={() => updateProvider(provider.id, "isEnabledForSession", !provider.isEnabledForSession)} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">
                       {provider.isEnabledForSession ? "Disable" : "Use for this session"}
                     </button>
                   </div>
@@ -257,11 +272,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                     </Field>
                   )}
 
-                  {selectedProvider.model !== undefined && (
-                    <Field label="Model identifier">
-                      <input value={selectedProvider.model ?? ""} onChange={(e) => updateProvider(selectedProvider.id, "model", e.target.value)} className="field" />
-                    </Field>
-                  )}
+                  {selectedProvider.model !== undefined && <ModelSelector provider={selectedProvider} modelSearch={modelSearch} setModelSearch={setModelSearch} updateProvider={updateProvider} />}
 
                   {selectedProvider.deployment !== undefined && (
                     <Field label="Deployment name">
@@ -288,10 +299,10 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                           type={showKeys[selectedProvider.id] ? "text" : "password"}
                           value={selectedProvider.apiKey ?? ""}
                           onChange={(e) => updateProvider(selectedProvider.id, "apiKey", e.target.value)}
-                          disabled={publicDemo}
+                          disabled={isPublicShowcase}
                           className="field flex-1"
                         />
-                        <button type="button" onClick={() => setShowKeys((current) => ({ ...current, [selectedProvider.id]: !current[selectedProvider.id] }))} className="rounded-full border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700">
+                        <button type="button" disabled={isPublicShowcase} onClick={() => setShowKeys((current) => ({ ...current, [selectedProvider.id]: !current[selectedProvider.id] }))} className="rounded-full border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700">
                           {showKeys[selectedProvider.id] ? "Hide" : "Reveal"}
                         </button>
                       </div>
@@ -301,7 +312,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button type="button" disabled={publicDemo || busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">
+                  <button type="button" disabled={isPublicShowcase || busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">
                     {busyProviderId === selectedProvider.id ? "Validating…" : "Validate connection"}
                   </button>
                   <button type="button" onClick={() => clearProvider(selectedProvider.id)} className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700">Clear configuration</button>
@@ -322,6 +333,60 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
       </div>
     </main>
   );
+}
+
+function ModelSelector({
+  provider,
+  modelSearch,
+  setModelSearch,
+  updateProvider,
+}: {
+  provider: ProviderConfig;
+  modelSearch: string;
+  setModelSearch: (value: string) => void;
+  updateProvider: <K extends keyof ProviderConfig>(id: string, key: K, value: ProviderConfig[K]) => void;
+}) {
+  const catalogueModels = modelCatalogue.filter((model) => model.provider === provider.kind);
+  const filteredModels = catalogueModels.filter((model) => `${model.displayName} ${model.modelId} ${model.family} ${model.tier} ${model.suitableFor.join(" ")}`.toLowerCase().includes(modelSearch.toLowerCase()));
+  const currentModel = provider.selectedModel || provider.model || "";
+  const selectedCatalogueModel = catalogueModels.find((model) => model.modelId === currentModel);
+
+  const applyModel = (modelId: string) => {
+    if (modelId === "__custom__") {
+      updateProvider(provider.id, "selectedModel", provider.model || "");
+      return;
+    }
+    updateProvider(provider.id, "selectedModel", modelId);
+    updateProvider(provider.id, "model", modelId);
+  };
+
+  return (
+    <div className="md:col-span-2">
+      <Field label="Model">
+        <div className="grid gap-3 md:grid-cols-2">
+          <input value={modelSearch} onChange={(event) => setModelSearch(event.target.value)} className="field" placeholder="Search models by capability" aria-label="Search provider model catalogue" />
+          <select value={selectedCatalogueModel ? selectedCatalogueModel.modelId : "__custom__"} onChange={(event) => applyModel(event.target.value)} className="field">
+            {filteredModels.map((model) => <option key={model.modelId} value={model.modelId}>{model.displayName} — {formatContext(model.contextWindow)} context</option>)}
+            <option value="__custom__">Custom model identifier</option>
+          </select>
+        </div>
+      </Field>
+      {selectedCatalogueModel ? (
+        <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-700">
+          <strong className="text-stone-900">{selectedCatalogueModel.family}</strong> · {selectedCatalogueModel.tier} · {selectedCatalogueModel.supportsStructuredOutput ? "Structured output" : "Freeform output"} · Pricing: {selectedCatalogueModel.pricingSource === "missing" ? "Unavailable" : selectedCatalogueModel.pricingSource ?? "Catalogue"}<br />
+          <span className="text-stone-600">{selectedCatalogueModel.limitations.join("; ")}</span>
+        </div>
+      ) : (
+        <Field label="Custom model identifier">
+          <input value={provider.model ?? ""} onChange={(event) => { updateProvider(provider.id, "model", event.target.value); updateProvider(provider.id, "selectedModel", event.target.value); }} className="field" placeholder="Enter an enterprise deployment or model ID" />
+        </Field>
+      )}
+    </div>
+  );
+}
+
+function formatContext(tokens?: number) {
+  return tokens ? new Intl.NumberFormat("en-US", { notation: "compact" }).format(tokens) : "Not published";
 }
 
 function StatusBadge({ status }: { status: ProviderConfig["status"] }) {

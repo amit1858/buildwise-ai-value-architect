@@ -1,4 +1,5 @@
-﻿import { z } from "zod";
+import { z } from "zod";
+import { NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
 
 export type QualitySensitivity = "standard" | "high" | "critical";
 export type WorkloadMode = "batch" | "real-time" | "mixed";
@@ -106,6 +107,8 @@ export interface ModelProfile {
   limitations: string[];
   pricingSource?: string;
   pricingVerifiedAt?: string;
+  recommendedTemperature?: number;
+  recommendedTopP?: number;
 }
 
 export interface WorkloadSpine {
@@ -608,6 +611,26 @@ export const modelCatalogue: ModelProfile[] = [
     pricingVerifiedAt: MODEL_CATALOG_VERIFIED_AT,
   },
   {
+    provider: "nvidia",
+    modelId: NVIDIA_BUILD_DEFAULT_MODEL,
+    displayName: "NVIDIA Nemotron 3.5 Lightning 30B A3B",
+    family: "Nemotron 3.5",
+    tier: "standard",
+    currency: "USD",
+    contextWindow: 1_000_000,
+    supportsStructuredOutput: true,
+    supportsTools: true,
+    supportsVision: false,
+    supportsPromptCaching: false,
+    supportsBatch: false,
+    suitableFor: ["Agentic workflows", "Long-context reasoning", "Generation"],
+    limitations: ["Pricing is not configured in BuildWise until provider-reported usage or catalogue pricing is available"],
+    pricingSource: "missing",
+    pricingVerifiedAt: "2026-08-11",
+    recommendedTemperature: 1,
+    recommendedTopP: 0.95,
+  },
+  {
     provider: "ollama",
     modelId: "llama3.1:8b",
     displayName: "Llama 3.1 8B",
@@ -823,9 +846,9 @@ export function calculateTaskCostTrace(task: WorkflowTask, monthlyExecutions: nu
     inputPrice,
     cachedInputPrice,
     outputPrice,
-    priceSource: !task.needsLLM ? "Deterministic execution â€” no model price" : model ? "Demo catalogue pricing" : "Pricing unavailable",
+    priceSource: !task.needsLLM ? "Deterministic execution — no model price" : model ? "Demo catalogue pricing" : "Pricing unavailable",
     priceVerificationDate: model?.pricingVerifiedAt,
-    costFormula: `${monthlyExecutions.toLocaleString("en-US")} executions Ã- ${calls.toFixed(2)} calls Ã- ${(retryMultiplier * fallbackMultiplier).toFixed(3)} retry/fallback factor Ã- [${uncached.toLocaleString("en-US")} uncached input Ã- input rate + ${cached.toLocaleString("en-US")} cached input Ã- cached-input rate + ${task.estimatedOutputTokens.toLocaleString("en-US")} output Ã- output rate]`,
+    costFormula: `${monthlyExecutions.toLocaleString("en-US")} executions x ${calls.toFixed(2)} calls x ${(retryMultiplier * fallbackMultiplier).toFixed(3)} retry/fallback factor x [${uncached.toLocaleString("en-US")} uncached input x input rate + ${cached.toLocaleString("en-US")} cached input x cached-input rate + ${task.estimatedOutputTokens.toLocaleString("en-US")} output x output rate]`,
     costPerExecution,
     monthlyCost: costPerExecution === null ? null : costPerExecution * monthlyExecutions,
     tokenTrace: {
@@ -1414,8 +1437,8 @@ export function getProjectNavigationSections(): Array<{ id: string; label: strin
 
 export function redactSecrets(value: string | undefined): string {
   if (!value) return "Not configured";
-  if (value.length <= 8) return "â€¢â€¢â€¢â€¢";
-  return `${value.slice(0, 3)}â€¢â€¢â€¢â€¢${value.slice(-3)}`;
+  if (value.length <= 8) return "••••";
+  return `${value.slice(0, 3)}••••${value.slice(-3)}`;
 }
 
 export function providerSupportsLocalHost(provider: ProviderConfig): boolean {
@@ -1423,5 +1446,5 @@ export function providerSupportsLocalHost(provider: ProviderConfig): boolean {
 }
 
 export function getRecommendationText(project: Project): string {
-  return `Recommended route: ${project.scenarios[2]?.label ?? "Balanced"} â€” a cost-aware mix of deterministic controls and selective model usage.`;
+  return `Recommended route: ${project.scenarios[2]?.label ?? "Balanced"} — a cost-aware mix of deterministic controls and selective model usage.`;
 }

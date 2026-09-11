@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
@@ -143,7 +143,7 @@ export default function ResultsPage() {
           href="/"
           className="text-sm font-semibold text-[#3B230E] underline underline-offset-4 hover:text-[#705B31] transition-colors"
         >
-          â† Start a new plan
+          ← Start a new plan
         </Link>
       </main>
     );
@@ -160,7 +160,7 @@ export default function ResultsPage() {
       <header className="sticky top-0 z-10 border-b border-[#E1DBC6] bg-[#FEF9ED]/95 backdrop-blur-sm px-8 py-[18px]">
         <div className="max-w-[1140px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="text-[#E5B85C] text-sm leading-none select-none">âœ¦</span>
+            <span className="text-[#E5B85C] text-sm leading-none select-none">✦</span>
             <span className="text-[11px] font-bold text-[#5F4E41] uppercase tracking-[0.22em]">
               BuildWise
             </span>
@@ -168,20 +168,20 @@ export default function ResultsPage() {
           <div className="flex items-center gap-4">
             {metadata && (
               <span className="text-[11px] text-[#B8A090]">
-                {metadata.modulesGenerated} modules Â· {metadata.mode} mode
+                {metadata.modulesGenerated} modules · {metadata.mode} mode
               </span>
             )}
             <button
               onClick={handleExport}
               className="text-[13px] font-semibold text-[#5F4E41] hover:text-[#3B230E] transition-colors"
             >
-              â†“ Export
+              ↓ Export
             </button>
             <Link
               href="/"
               className="text-[13px] font-semibold text-[#5F4E41] hover:text-[#3B230E] transition-colors"
             >
-              â† New Plan
+              ← New Plan
             </Link>
           </div>
         </div>
@@ -198,14 +198,14 @@ export default function ResultsPage() {
             Your Build Plan
           </h1>
           <p className="text-[#5F4E41] text-sm mt-2">
-            Based on your input â€” here is what BuildWise recommends you build first.
+            Based on your input — here is what BuildWise recommends you build first.
           </p>
         </div>
 
         {/* Partial failure banner */}
         {failedModules > 0 && (
           <div className="mt-5 mb-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 flex items-center gap-3">
-            <span className="text-amber-600 text-sm font-bold">âš </span>
+            <span className="text-amber-600 text-sm font-bold">⚠</span>
             <p className="text-sm text-amber-800">
               {failedModules} module{failedModules > 1 ? "s" : ""} could not be generated and{" "}
               {failedModules > 1 ? "are" : "is"} shown with an error state below. All other output is intact.
@@ -222,7 +222,7 @@ export default function ResultsPage() {
         {/* Input context strip */}
         {input?.problem && (
           <div className="mt-6 mb-10 rounded-xl border border-[#E8D9C4] bg-white px-5 py-4 flex items-start gap-4">
-            <span className="text-[#E5B85C] text-sm mt-0.5 shrink-0 select-none">âœ¦</span>
+            <span className="text-[#E5B85C] text-sm mt-0.5 shrink-0 select-none">✦</span>
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-[#8A7060] uppercase tracking-wider mb-1">
                 Original Input
@@ -231,7 +231,7 @@ export default function ResultsPage() {
               {input.goal && (
                 <p className="text-xs text-[#8A7060] mt-1.5">
                   Goal: {input.goal}
-                  {input.constraints ? ` Â· Constraints: ${input.constraints}` : ""}
+                  {input.constraints ? ` · Constraints: ${input.constraints}` : ""}
                 </p>
               )}
             </div>
@@ -240,11 +240,11 @@ export default function ResultsPage() {
 
         <div className="flex flex-col gap-7">
 
-          {/* â”€â”€ Decision Spine â”€â”€ */}
+          {/* ── Decision Spine ── */}
           <Card>
             <CardHeader
               label="Decision Spine"
-              description="Rule-based classification from your inputs â€” source of truth for all modules and execution strategy."
+              description="Rule-based classification from your inputs — source of truth for all modules and execution strategy."
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-7">
               <SpineField label="Product Type" value={decisionSpine.productType} />
@@ -274,7 +274,7 @@ export default function ResultsPage() {
             </div>
           </Card>
 
-          {/* â”€â”€ Module Outputs â”€â”€ */}
+          {/* ── Module Outputs ── */}
           {moduleEntries.length > 0 && (
             <div className="flex flex-col gap-5">
               <div>
@@ -304,7 +304,7 @@ export default function ResultsPage() {
             </div>
           )}
 
-          {/* â”€â”€ Execution Strategy â”€â”€ */}
+          {/* ── Execution Strategy ── */}
           {executionStrategy ? (
             <div className="flex flex-col gap-5">
               <div className="flex items-start justify-between">
@@ -332,7 +332,7 @@ export default function ResultsPage() {
 
               <div className="rounded-2xl bg-[#3B230E] px-9 py-7">
                 <p className="text-[10px] font-bold text-[#E5B85C] uppercase tracking-wider mb-4">
-                  Start Here â€” Next Steps
+                  Start Here — Next Steps
                 </p>
                 <ol className="flex flex-col gap-2.5">
                   {executionStrategy.nextSteps.map((step, i) => (
@@ -358,8 +358,8 @@ export default function ResultsPage() {
           {metadata && (
             <div className="pt-2 pb-4 flex items-center justify-between border-t border-[#E8D9C4]">
               <p className="text-[11px] text-[#C4AE98]">
-                Generated {new Date(metadata.generatedAt).toLocaleTimeString()} Â·{" "}
-                v{metadata.version} Â· {metadata.mode} mode Â· {metadata.modulesGenerated} modules
+                Generated {new Date(metadata.generatedAt).toLocaleTimeString()} ·{" "}
+                v{metadata.version} · {metadata.mode} mode · {metadata.modulesGenerated} modules
               </p>
               <Link
                 href="/"
@@ -376,7 +376,7 @@ export default function ResultsPage() {
   );
 }
 
-/* â”€â”€ Execution Item Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Execution Item Card ─────────────────────────────────────── */
 
 function ExecutionItemCard({ item }: { item: ExecutionItem }) {
   const isPrompt = item.type === "prompt";
@@ -434,7 +434,7 @@ function ExecutionItemCard({ item }: { item: ExecutionItem }) {
           <ul className="flex flex-col gap-2">
             {(item.content as string[]).map((line, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-[#3B230E] leading-snug">
-                <span className="mt-[3px] shrink-0 text-[#E5B85C] text-[10px] font-bold">â€º</span>
+                <span className="mt-[3px] shrink-0 text-[#E5B85C] text-[10px] font-bold">›</span>
                 <span>{line}</span>
               </li>
             ))}
@@ -455,7 +455,7 @@ function ExecutionItemCard({ item }: { item: ExecutionItem }) {
   );
 }
 
-/* â”€â”€ Module Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Module Card ──────────────────────────────────────────────── */
 
 function ModuleCard({
   name,
@@ -480,7 +480,7 @@ function ModuleCard({
     return (
       <div className="rounded-2xl border border-dashed border-red-200 bg-red-50 px-9 py-7">
         <div className="flex items-start gap-4 mb-5">
-          <span className="text-red-400 text-lg mt-0.5 shrink-0">âš </span>
+          <span className="text-red-400 text-lg mt-0.5 shrink-0">⚠</span>
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h3 className="text-sm font-bold text-red-700">{name}</h3>
@@ -504,7 +504,7 @@ function ModuleCard({
 
   return (
     <div className="rounded-2xl bg-white border border-[#E1DBC6] shadow-[0_2px_20px_rgba(59,35,14,0.05)]">
-      {/* Header â€” always visible */}
+      {/* Header — always visible */}
       <div className="px-9 py-5 flex items-center justify-between">
         <div className="min-w-0 flex-1 mr-4">
           <div className="flex items-center gap-3 flex-wrap">
@@ -528,12 +528,12 @@ function ModuleCard({
             className="text-[10px] transition-transform duration-200 inline-block"
             style={{ transform: isCollapsed ? "rotate(0deg)" : "rotate(180deg)" }}
           >
-            â-¾
+            v
           </span>
         </button>
       </div>
 
-      {/* Body â€” hidden when collapsed */}
+      {/* Body — hidden when collapsed */}
       {!isCollapsed && (
         <div className="px-9 pb-8">
           <div className="border-t border-[#E8D9C4] pt-5 mb-5">
@@ -565,7 +565,7 @@ function ModuleCard({
               onFeedbackChange={onFeedbackChange}
               onRegenerate={onRegenerate}
               isRegenerating={isRegenerating}
-              placeholder="e.g. 'focus on B2B SaaS' Â· 'add security constraints' Â· 'assume 3-person team'..."
+              placeholder="e.g. 'focus on B2B SaaS' · 'add security constraints' · 'assume 3-person team'..."
             />
           </div>
         </div>
@@ -574,7 +574,7 @@ function ModuleCard({
   );
 }
 
-/* â”€â”€ Regenerate Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Regenerate Section ───────────────────────────────────────── */
 
 function RegenerateSection({
   feedbackValue,
@@ -606,13 +606,13 @@ function RegenerateSection({
         disabled={isRegenerating}
         className="shrink-0 rounded-xl bg-[#3B230E] px-4 py-2.5 text-[12px] font-bold text-[#E5B85C] hover:bg-[#705B31] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isRegenerating ? "Â·Â·Â·" : "â†º Regenerate"}
+        {isRegenerating ? "···" : "↺ Regenerate"}
       </button>
     </div>
   );
 }
 
-/* â”€â”€ Module sub-sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Module sub-sections ──────────────────────────────────────── */
 
 function ModuleSection({ label, content }: { label: string; content: string }) {
   return (
@@ -644,7 +644,7 @@ function ModuleListSection({
               className="mt-[3px] shrink-0 text-[10px] font-bold"
               style={{ color: bulletColor }}
             >
-              {numbered ? `${i + 1}.` : "â€º"}
+              {numbered ? `${i + 1}.` : "›"}
             </span>
             <span>{item}</span>
           </li>
@@ -654,7 +654,7 @@ function ModuleListSection({
   );
 }
 
-/* â”€â”€ Shared primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Shared primitives ────────────────────────────────────────── */
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
@@ -722,7 +722,7 @@ function Pill({ children, accent = false }: { children: React.ReactNode; accent?
   );
 }
 
-/* â”€â”€ Copy Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Copy Button ──────────────────────────────────────────────── */
 
 function CopyButton({ text, className = "" }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -739,7 +739,7 @@ function CopyButton({ text, className = "" }: { text: string; className?: string
       onClick={handleCopy}
       className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${className}`}
     >
-      {copied ? "âœ“ Copied" : "Copy"}
+      {copied ? "✓ Copied" : "Copy"}
     </button>
   );
 }
