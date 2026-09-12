@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { buildDemoProject, buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
 import { buildCompleteExportBundle, generateBuildArtifacts, generateCopilotInstructionsMarkdown, type BuildArtifact } from "@/lib/build-artifacts";
@@ -9,6 +10,7 @@ import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-
 import { executeProviderTest } from "@/lib/provider-adapters";
 
 export function WorkspaceShell({ projectId, section, publicDemo = false }: { projectId: string; section: string; publicDemo?: boolean }) {
+  const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("balanced");
   const [lastTest, setLastTest] = useState<ControlledTestRecord | null>(null);
@@ -39,7 +41,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
 
   const handleDelete = () => {
     deleteProject(project.id);
-    window.location.href = "/";
+    router.push("/");
   };
 
   const runControlledTest = async (taskId: string, mode: "demo" | "mocked-byok" | "live-byok") => {

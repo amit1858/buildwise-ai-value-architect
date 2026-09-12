@@ -16,6 +16,10 @@ Non-secret project state and theme preference may be stored locally. Provider AP
 
 The browser-facing prototype is suitable for demo and controlled evaluation. Production deployment should place live provider adapters behind a server-side session boundary, apply authentication and authorization, redact request logs, enforce provider allowlists, and use a managed secret store. GitHub Pages is not a suitable host for live BYOK execution.
 
+## Runtime dependency baseline
+
+The server-capable application uses Next.js 16.3.4 and AI SDK 6.0.214 or later compatible patch releases. This baseline remediates the production advisories present in Next.js 16.2.4 and AI SDK 6.0.168 without changing BuildWise routing, economics, model selection, provider request contracts, credential handling, public-demo restrictions, or visual behavior. React and React DOM remain on 19.2.4 because they satisfy the patched Next.js peer range.
+
 ## Local-only NVIDIA verification procedure
 
 Use a standalone server-capable build only. Never paste a provider key into chat, source code, terminal history, screenshots, browser recordings, URLs, analytics, exports, or committed files.
