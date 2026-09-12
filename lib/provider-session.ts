@@ -37,3 +37,7 @@ export function clearAllSessionProviderSettings() {
   providerMetadata.clear();
   providerSecrets.clear();
 }
+
+export function clearAllSessionProviderSecrets() {
+  providerSecrets.clear();
+}

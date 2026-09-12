@@ -83,6 +83,8 @@ export interface ProviderConfig {
   validationMessage?: string;
   lastValidatedAt?: string;
   selectedModel?: string;
+  isCustomModel?: boolean;
+  customModel?: string;
   pricingStatus?: string;
   sanitizedEndpoint?: string;
 }

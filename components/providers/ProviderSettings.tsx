@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { modelCatalogue, type OperatingMode, type ProviderConfig, redactSecrets } from "@/lib/buildwise";
 import { NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
 import {
-  clearAllSessionProviderSettings,
+  clearCustomModelIdentifier,
+  CUSTOM_MODEL_VALUE,
+  getCustomModelIdentifier,
+  getProviderValidationModel,
+  getSelectedCatalogueModel,
+  isCustomModelSelection,
+  selectProviderModel,
+  setCustomModelIdentifier,
+} from "@/lib/provider-model-selection";
+import {
+  clearAllSessionProviderSecrets,
   getSessionProviderSecret,
   readSessionProviderSettings,
   setSessionProviderSecret,
@@ -112,13 +122,13 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
   };
 
   const validateProvider = async (provider: ProviderConfig) => {
-    const selectedModel = provider.selectedModel || provider.model || provider.deployment;
+    const selectedModel = getProviderValidationModel(provider);
     if (isPublicShowcase) {
       updateProvider(provider.id, "status", "Not configured");
       updateProvider(provider.id, "validationMessage", "Public showcase mode blocks provider credentials and live validation. Open the standalone application for BYOK testing.");
       return;
     }
-    if (!selectedModel?.trim()) {
+    if (!selectedModel) {
       updateProvider(provider.id, "status", "Incomplete");
       updateProvider(provider.id, "validationMessage", "Select a catalogue model or enter a custom model identifier before validation.");
       return;
@@ -136,6 +146,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
       const nextModel = data.detectedModel || provider.selectedModel || provider.model || provider.deployment;
       updateProvider(provider.id, "status", nextStatus);
       updateProvider(provider.id, "selectedModel", nextModel);
+      if (provider.isCustomModel) updateProvider(provider.id, "customModel", nextModel);
       updateProvider(provider.id, "sanitizedEndpoint", data.sanitizedEndpoint ?? provider.endpoint ?? "");
       updateProvider(provider.id, "validationMessage", data.message ?? "");
       updateProvider(provider.id, "lastValidatedAt", new Date().toISOString());
@@ -153,24 +164,24 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
 
   const clearProvider = (providerId: string) => {
     setSessionProviderSecret(providerId, "");
-    setProviders((current) => current.map((provider) => provider.id === providerId ? {
-      ...provider,
-      apiKey: "",
-      endpoint: provider.endpoint,
-      model: provider.model,
-      deployment: provider.deployment,
-      status: "Not configured",
-      selectedModel: "",
-      validationMessage: "Not retained after refresh.",
-      isEnabledForSession: false,
-      sanitizedEndpoint: "",
-      lastValidatedAt: undefined,
-    } : provider));
+    setProviders((current) => current.map((provider) => {
+      if (provider.id !== providerId) return provider;
+      const cleared = clearCustomModelIdentifier(provider);
+      return {
+        ...cleared,
+        apiKey: "",
+        status: "Not configured",
+        validationMessage: "Not retained after refresh.",
+        isEnabledForSession: false,
+        sanitizedEndpoint: "",
+        lastValidatedAt: undefined,
+      };
+    }));
   };
 
   const forgetAllKeys = () => {
     setProviders((current) => current.map((provider) => ({ ...provider, apiKey: "", isEnabledForSession: false, status: "Not configured", validationMessage: "Not retained after refresh.", lastValidatedAt: undefined, selectedModel: provider.selectedModel || provider.model || provider.deployment || "" })));
-    clearAllSessionProviderSettings();
+    clearAllSessionProviderSecrets();
   };
 
   const connectedCount = providers.filter((provider) => provider.status === "Connected" && provider.isEnabledForSession).length;
@@ -244,7 +255,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setSelectedProviderId(provider.id)} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">Configure</button>
+                    <button type="button" onClick={() => { setSelectedProviderId(provider.id); setModelSearch(""); }} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">Configure</button>
                     <button type="button" disabled={isPublicShowcase || provider.status !== "Connected"} onClick={() => updateProvider(provider.id, "isEnabledForSession", !provider.isEnabledForSession)} className="rounded-full border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700">
                       {provider.isEnabledForSession ? "Disable" : "Use for this session"}
                     </button>
@@ -272,7 +283,14 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                     </Field>
                   )}
 
-                  {selectedProvider.model !== undefined && <ModelSelector provider={selectedProvider} modelSearch={modelSearch} setModelSearch={setModelSearch} updateProvider={updateProvider} />}
+                  {selectedProvider.model !== undefined && (
+                    <ModelSelector
+                      provider={selectedProvider}
+                      modelSearch={modelSearch}
+                      setModelSearch={setModelSearch}
+                      updateProvider={(nextProvider) => setProviders((current) => current.map((provider) => provider.id === nextProvider.id ? nextProvider : provider))}
+                    />
+                  )}
 
                   {selectedProvider.deployment !== undefined && (
                     <Field label="Deployment name">
@@ -319,7 +337,11 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                   <button type="button" onClick={forgetAllKeys} className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700">Forget all keys</button>
                 </div>
 
-                <div className="mt-6 space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700">
+                <div
+                  className="mt-6 space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700"
+                  aria-live="polite"
+                  role={selectedProvider.status === "Incomplete" || selectedProvider.status === "Connection failed" ? "alert" : undefined}
+                >
                   <div><span className="font-medium text-stone-900">Connection result:</span> {selectedProvider.validationMessage ?? "No validation yet."}</div>
                   <div><span className="font-medium text-stone-900">Sanitised endpoint:</span> {selectedProvider.sanitizedEndpoint || "No endpoint recorded."}</div>
                   <div><span className="font-medium text-stone-900">Selected model:</span> {selectedProvider.selectedModel || selectedProvider.model || selectedProvider.deployment || "None detected"}</div>
@@ -344,20 +366,25 @@ function ModelSelector({
   provider: ProviderConfig;
   modelSearch: string;
   setModelSearch: (value: string) => void;
-  updateProvider: <K extends keyof ProviderConfig>(id: string, key: K, value: ProviderConfig[K]) => void;
+  updateProvider: (provider: ProviderConfig) => void;
 }) {
+  const customInputRef = useRef<HTMLInputElement>(null);
+  const shouldFocusCustomInput = useRef(false);
   const catalogueModels = modelCatalogue.filter((model) => model.provider === provider.kind);
   const filteredModels = catalogueModels.filter((model) => `${model.displayName} ${model.modelId} ${model.family} ${model.tier} ${model.suitableFor.join(" ")}`.toLowerCase().includes(modelSearch.toLowerCase()));
-  const currentModel = provider.selectedModel || provider.model || "";
-  const selectedCatalogueModel = catalogueModels.find((model) => model.modelId === currentModel);
+  const selectedCatalogueModel = getSelectedCatalogueModel(provider);
+  const isCustomModel = isCustomModelSelection(provider);
+
+  useEffect(() => {
+    if (isCustomModel && shouldFocusCustomInput.current) {
+      customInputRef.current?.focus({ preventScroll: true });
+      shouldFocusCustomInput.current = false;
+    }
+  }, [isCustomModel]);
 
   const applyModel = (modelId: string) => {
-    if (modelId === "__custom__") {
-      updateProvider(provider.id, "selectedModel", provider.model || "");
-      return;
-    }
-    updateProvider(provider.id, "selectedModel", modelId);
-    updateProvider(provider.id, "model", modelId);
+    shouldFocusCustomInput.current = modelId === CUSTOM_MODEL_VALUE;
+    updateProvider(selectProviderModel(provider, modelId));
   };
 
   return (
@@ -365,21 +392,33 @@ function ModelSelector({
       <Field label="Model">
         <div className="grid gap-3 md:grid-cols-2">
           <input value={modelSearch} onChange={(event) => setModelSearch(event.target.value)} className="field" placeholder="Search models by capability" aria-label="Search provider model catalogue" />
-          <select value={selectedCatalogueModel ? selectedCatalogueModel.modelId : "__custom__"} onChange={(event) => applyModel(event.target.value)} className="field">
+          <select value={isCustomModel ? CUSTOM_MODEL_VALUE : selectedCatalogueModel?.modelId ?? CUSTOM_MODEL_VALUE} onChange={(event) => applyModel(event.target.value)} className="field" aria-label={`${provider.displayName} model selection`}>
             {filteredModels.map((model) => <option key={model.modelId} value={model.modelId}>{model.displayName} — {formatContext(model.contextWindow)} context</option>)}
-            <option value="__custom__">Custom model identifier</option>
+            <option value={CUSTOM_MODEL_VALUE}>Custom model identifier</option>
           </select>
         </div>
       </Field>
-      {selectedCatalogueModel ? (
+      {!isCustomModel && selectedCatalogueModel ? (
         <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-700">
           <strong className="text-stone-900">{selectedCatalogueModel.family}</strong> · {selectedCatalogueModel.tier} · {selectedCatalogueModel.supportsStructuredOutput ? "Structured output" : "Freeform output"} · Pricing: {selectedCatalogueModel.pricingSource === "missing" ? "Unavailable" : selectedCatalogueModel.pricingSource ?? "Catalogue"}<br />
           <span className="text-stone-600">{selectedCatalogueModel.limitations.join("; ")}</span>
         </div>
       ) : (
-        <Field label="Custom model identifier">
-          <input value={provider.model ?? ""} onChange={(event) => { updateProvider(provider.id, "model", event.target.value); updateProvider(provider.id, "selectedModel", event.target.value); }} className="field" placeholder="Enter an enterprise deployment or model ID" />
-        </Field>
+        <div className="mt-3">
+          <label htmlFor={`custom-model-${provider.id}`} className="block text-sm font-medium text-stone-800">Custom model identifier</label>
+          <input
+            ref={customInputRef}
+            id={`custom-model-${provider.id}`}
+            value={getCustomModelIdentifier(provider)}
+            onChange={(event) => updateProvider(setCustomModelIdentifier(provider, event.target.value))}
+            className="field mt-2"
+            placeholder="Enter the provider model identifier"
+            aria-describedby={`custom-model-help-${provider.id}`}
+          />
+          <p id={`custom-model-help-${provider.id}`} className="mt-2 text-xs text-stone-500">
+            Enter the exact model identifier expected by this provider or enterprise gateway.
+          </p>
+        </div>
       )}
     </div>
   );
