@@ -35,4 +35,13 @@ describe("runtime documentation and configuration", () => {
     expect(read("app/api/providers/validate/route.ts")).toContain("PUBLIC_DEMO");
     expect(read("app/api/providers/test/route.ts")).toContain("PUBLIC_DEMO");
   });
+
+  it("explains BuildWise token economics as part of the complete delivery journey", () => {
+    const landing = read("components/landing/LandingPage.tsx");
+    expect(landing).toContain("Token maxxing is a system-design problem");
+    expect(landing).toContain("Reactive usage caps");
+    expect(landing).toContain("problem complexity to task decomposition, model selection, prompt design, token use, governance, and ROI");
+    expect(landing).toContain("implementation-ready Build Kit");
+    expect(landing).toContain("expands the Low-code, Pro-code, and Hybrid journey rather than replacing it");
+  });
 });

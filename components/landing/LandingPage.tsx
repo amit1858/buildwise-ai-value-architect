@@ -113,6 +113,15 @@ export function LandingPage() {
             <h2 className="max-w-[13ch] text-balance text-3xl font-semibold leading-tight tracking-[-0.055em] text-stone-900 md:text-4xl">
               The model is not the starting point.
             </h2>
+            <p className="mt-5 max-w-[52ch] text-sm leading-7 text-stone-600">
+              Token maxxing is a system-design problem, not a billing surprise. Reactive usage caps arrive after architecture, routing, and prompt choices have already set the cost curve. BuildWise moves cost management into the design itself.
+            </p>
+            <p className="mt-4 max-w-[52ch] text-sm leading-7 text-stone-600">
+              It connects problem complexity to task decomposition, model selection, prompt design, token use, governance, and ROI, then carries the decision trail from the initial idea into an implementation-ready Build Kit.
+            </p>
+            <p className="bw-text-accent mt-4 max-w-[52ch] text-sm font-semibold leading-6">
+              Token optimization expands the Low-code, Pro-code, and Hybrid journey rather than replacing it.
+            </p>
           </div>
           <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
             <Principle title="Deterministic first" copy="Rules, retrieval, and schema checks sit before generation so routine work avoids model spend." />
