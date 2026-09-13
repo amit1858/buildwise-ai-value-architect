@@ -169,6 +169,12 @@ test.describe("BuildWise visual accessibility", () => {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, `populated results overflowed in ${theme}`).toBeLessThanOrEqual(1);
     }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openWithTheme(page, "/results", "dark", "dark");
+    await expectNoSeriousAccessibilityViolations(page);
+    const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(mobileOverflow, "populated results overflowed at 390x844").toBeLessThanOrEqual(1);
   });
 
   test("representative routes remain usable at required responsive viewports", async ({ page }) => {
