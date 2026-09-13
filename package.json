@@ -9,23 +9,26 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:visual": "playwright test tests/visual-accessibility.spec.ts",
+    "scan:utf8": "node scripts/check-utf8.mjs"
   },
   "dependencies": {
-    "ai": "^6.0.168",
-    "next": "16.2.4",
+    "ai": "^6.0.214",
+    "next": "16.3.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^2.1.9"

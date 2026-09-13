@@ -40,6 +40,11 @@ describe("provider API routes", () => {
         body: JSON.stringify({ provider: { id: "demo", kind: "openai-compatible" }, request: { prompt: "x", mode: "mock" } }),
       }));
       expect(response.status).toBe(403);
+      const validation = await validateProvider(new Request("http://localhost/api/providers/validate", {
+        method: "POST",
+        body: JSON.stringify({ provider: { id: "demo", kind: "openai-compatible" } }),
+      }));
+      expect(validation.status).toBe(403);
     } finally {
       if (original === undefined) delete process.env.PUBLIC_DEMO;
       else process.env.PUBLIC_DEMO = original;

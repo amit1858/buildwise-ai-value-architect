@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { buildDemoProject, buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
 import { buildCompleteExportBundle, generateBuildArtifacts, generateCopilotInstructionsMarkdown, type BuildArtifact } from "@/lib/build-artifacts";
@@ -9,6 +10,7 @@ import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-
 import { executeProviderTest } from "@/lib/provider-adapters";
 
 export function WorkspaceShell({ projectId, section, publicDemo = false }: { projectId: string; section: string; publicDemo?: boolean }) {
+  const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("balanced");
   const [lastTest, setLastTest] = useState<ControlledTestRecord | null>(null);
@@ -26,7 +28,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
   const estimate = useMemo(() => project?.scenarios.find((item) => item.id === selectedScenario) ?? project?.scenarios[2] ?? null, [project, selectedScenario]);
 
   if (!project) {
-    return <main className="p-10 text-stone-700">Project not found.</main>;
+    return <main className="bw-page p-10 text-stone-700">Project not found.</main>;
   }
 
   const updateProject = (updater: (current: Project) => Project) => {
@@ -39,7 +41,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
 
   const handleDelete = () => {
     deleteProject(project.id);
-    window.location.href = "/";
+    router.push("/");
   };
 
   const runControlledTest = async (taskId: string, mode: "demo" | "mocked-byok" | "live-byok") => {
@@ -106,7 +108,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 text-stone-900">
+    <div className="bw-page min-h-screen bg-stone-100 text-stone-900">
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside className="w-full border-b border-stone-200 bg-white p-4 lg:w-72 lg:border-b-0 lg:border-r">
           <div className="mb-6 flex items-center justify-between">
@@ -230,7 +232,7 @@ function BuildPathPanel({ project, onSelect }: { project: Project; onSelect: (pa
   const paths = project.buildPaths ?? [];
   return <div className="space-y-6">
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Choose build path</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">Build path recommendation</h3><p className="mt-2 text-sm text-stone-600">Compare delivery speed, control, governance, and ownership before committing to a platform or runtime.</p></div>
-    <div className="grid gap-4 lg:grid-cols-3">{paths.map((path) => <div key={path.id} className={`rounded-2xl border p-5 shadow-sm ${path.id === project.recommendedBuildPath ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white text-stone-900"}`}><div className="flex items-center justify-between"><h4 className="text-lg font-semibold">{path.label}</h4><span className="text-sm font-semibold">{path.fitScore}% fit</span></div><p className={`mt-3 text-sm leading-6 ${path.id === project.recommendedBuildPath ? "text-stone-200" : "text-stone-600"}`}>{path.summary}</p><div className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{path.id === project.recommendedBuildPath ? "Selected recommendation" : "Alternative"}</div><ul className="mt-3 space-y-2 text-sm">{path.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul><div className="mt-4 text-xs leading-5 opacity-80">Trade-off: {path.tradeoffs[0]}</div><button type="button" onClick={() => onSelect(path.id)} className={path.id === project.recommendedBuildPath ? "mt-5 rounded-full border border-white/40 px-4 py-2 text-sm font-medium text-white" : "mt-5 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white"}>{path.id === project.recommendedBuildPath ? "Selected" : "Use this path"}</button></div>)}</div>
+    <div className="grid gap-4 lg:grid-cols-3">{paths.map((path) => <div key={path.id} className={`rounded-2xl border p-5 shadow-sm ${path.id === project.recommendedBuildPath ? "bw-surface-selected" : "border-stone-200 bg-white text-stone-900"}`}><div className="flex items-center justify-between"><h4 className="bw-text-primary text-lg font-semibold">{path.label}</h4><span className="bw-text-primary text-sm font-semibold">{path.fitScore}% fit</span></div><p className="bw-text-secondary mt-3 text-sm leading-6">{path.summary}</p><div className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{path.id === project.recommendedBuildPath ? "Selected recommendation" : "Alternative"}</div><ul className="mt-3 space-y-2 text-sm">{path.strengths.map((item) => <li key={item}>+ {item}</li>)}</ul><div className="mt-4 text-xs leading-5 opacity-80">Trade-off: {path.tradeoffs[0]}</div><button type="button" onClick={() => onSelect(path.id)} className={path.id === project.recommendedBuildPath ? "bw-action-secondary mt-5 rounded-full border px-4 py-2 text-sm font-medium" : "bw-action-primary mt-5 rounded-full px-4 py-2 text-sm font-medium"}>{path.id === project.recommendedBuildPath ? "Selected" : "Use this path"}</button></div>)}</div>
   </div>;
 }
 
@@ -281,7 +283,7 @@ function BuildKitPanel({ project, estimate }: { project: Project; estimate: Scen
                 className={selectedArtifact?.id === artifact.id ? "w-full rounded-xl bg-stone-900 px-3 py-3 text-left text-sm font-medium text-white" : "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-left text-sm font-medium text-stone-700 hover:border-stone-400"}
               >
                 <div>{artifact.label}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] opacity-70">{artifact.fileName}</div>
+                <div className={selectedArtifact?.id === artifact.id ? "mt-1 text-[10px] uppercase tracking-[0.15em] text-stone-200" : "bw-text-secondary mt-1 text-[10px] uppercase tracking-[0.15em]"}>{artifact.fileName}</div>
               </button>
             ))}
           </div>
@@ -379,7 +381,7 @@ function WorkflowPanel({ project, onUpdate }: { project: Project; onUpdate: (pro
       {expandedTaskId && (() => {
         const task = project.tasks.find((item) => item.id === expandedTaskId);
         if (!task) return null;
-        return <div data-testid="routing-editor" className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-5">
+        return <div data-testid="routing-editor" className="bw-surface-emphasis mt-6 rounded-2xl border p-5">
           <div className="mb-4 text-sm font-semibold text-stone-900">Routing editor: {task.name}</div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <label className="text-xs text-stone-600">Task type<select value={task.taskType} onChange={(event) => updateTask(task.id, { taskType: event.target.value })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm"><option>Classification</option><option>Extraction</option><option>Retrieval</option><option>Generation</option><option>Validation</option></select></label>

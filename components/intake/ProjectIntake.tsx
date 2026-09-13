@@ -63,7 +63,7 @@ export function ProjectIntake() {
   };
 
   return (
-    <main id="main-content" className="min-h-[100dvh] bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
+    <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex items-center justify-between border-b border-stone-300 pb-4">
           <div>

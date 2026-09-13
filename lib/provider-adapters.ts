@@ -1,5 +1,6 @@
 import type { ExecutionProvenance, ModelProfile, ProviderConfig, ProviderKind } from "@/lib/buildwise";
 import { getModelById, modelCatalogue } from "@/lib/buildwise";
+import { NVIDIA_BUILD_BASE_URL, NVIDIA_BUILD_CHAT_COMPLETIONS_URL, NVIDIA_BUILD_CHAT_ROUTE, NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
 
 export interface ProviderValidationResult {
   ok: boolean;
@@ -17,6 +18,7 @@ export interface ProviderExecutionRequest {
   model?: string;
   maxOutputTokens?: number;
   temperature?: number;
+  topP?: number;
   structuredOutput?: boolean;
   mode?: "live" | "mock";
 }
@@ -38,6 +40,8 @@ export interface ProviderExecutionResult {
   warnings: string[];
   status: "success" | "error";
   usageSummary: string;
+  usageReported: boolean;
+  requestId?: string;
 }
 
 export interface ProviderAdapter {
@@ -46,7 +50,7 @@ export interface ProviderAdapter {
   execute(provider: ProviderConfig, request: ProviderExecutionRequest): Promise<ProviderExecutionResult>;
 }
 
-const PROVIDER_API_KEY_PATTERNS = [/sk-[A-Za-z0-9_-]+/gi, /AIza[A-Za-z0-9_-]+/gi, /api[_-]?key[=:]?["']?([A-Za-z0-9._~-]+)/gi];
+const PROVIDER_API_KEY_PATTERNS = [/sk-[A-Za-z0-9_-]+/gi, /AIza[A-Za-z0-9_-]+/gi, /gh[pousr]_[A-Za-z0-9_]+/gi, /Bearer\s+[A-Za-z0-9._-]+/gi, /Authorization:\s*Bearer\s+[A-Za-z0-9._-]+/gi, /api[_-]?key[=:]?["']?([A-Za-z0-9._~-]+)/gi];
 
 export function sanitizeProviderError(value: unknown): string {
   const text = value instanceof Error ? value.message : String(value ?? "");
@@ -76,6 +80,20 @@ function getNormalizedProviderModel(provider: ProviderConfig): string {
 function endpointWithPath(endpoint: string | undefined, path: string): string {
   const base = (endpoint || "").replace(/\/+$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+export function getNvidiaBuildBaseEndpoint(endpoint?: string): string {
+  const raw = (endpoint || NVIDIA_BUILD_BASE_URL).trim().replace(/\/+$/, "");
+  return raw === "https://integrate.api.nvidia.com" ? NVIDIA_BUILD_BASE_URL : raw;
+}
+
+export function getNvidiaChatCompletionsUrl(endpoint?: string): string {
+  const base = getNvidiaBuildBaseEndpoint(endpoint);
+  return base === NVIDIA_BUILD_BASE_URL ? NVIDIA_BUILD_CHAT_COMPLETIONS_URL : endpointWithPath(base, NVIDIA_BUILD_CHAT_ROUTE);
+}
+
+function getNvidiaModelsUrl(endpoint?: string): string {
+  return endpointWithPath(getNvidiaBuildBaseEndpoint(endpoint), "/models");
 }
 
 async function requestJson(url: string, init: RequestInit, timeoutMs = 15_000): Promise<{ payload: Record<string, unknown>; latencyMs: number }> {
@@ -136,6 +154,7 @@ function mockExecution(provider: ProviderConfig, request: ProviderExecutionReque
     warnings: ["Mocked provider response. No paid provider call was made."],
     status: "success",
     usageSummary: `${usage.input} input / ${usage.output} output / ${usage.cached} cached tokens`,
+    usageReported: true,
   };
 }
 
@@ -144,6 +163,7 @@ function openAiResult(provider: ProviderConfig, request: ProviderExecutionReques
   const usage = normalizeUsageUsage(payload);
   const model = String(payload.model ?? getNormalizedProviderModel(provider));
   const priceConfigured = Boolean(getModelPrice(model));
+  const actualCost = usage.reported ? calculateNormalizedCost(model, usage) : null;
   return {
     providerId: provider.id,
     model,
@@ -153,14 +173,16 @@ function openAiResult(provider: ProviderConfig, request: ProviderExecutionReques
     cachedTokens: usage.cached,
     latencyMs,
     finishReason: extracted.finishReason,
-    actualCost: calculateNormalizedCost(model, usage),
-    projectedMonthlyCost: calculateNormalizedCost(model, usage) === null ? null : calculateNormalizedCost(model, usage)! * 100_000,
-    pricingSource: priceConfigured ? "Demo catalogue pricing" : "Pricing unavailable",
+    actualCost,
+    projectedMonthlyCost: actualCost === null ? null : actualCost * 100_000,
+    pricingSource: actualCost === null ? "Provider usage unavailable" : priceConfigured ? "Demo catalogue pricing" : "Pricing unavailable",
     provenance: "live-provider",
     isStructuredValid: parseStructuredContent(extracted.content, Boolean(request.structuredOutput)) && extracted.structuredValid,
-    warnings: priceConfigured ? [] : ["Provider returned a model without a configured price; cost is unavailable until pricing is added."],
+    warnings: usage.reported && priceConfigured ? [] : [usage.reported ? "Provider returned a model without a configured price; cost is unavailable until pricing is added." : "Provider did not report token usage; usage and call cost are unavailable."],
     status: "success",
-    usageSummary: `${usage.input} input / ${usage.output} output / ${usage.cached} cached tokens`,
+    usageSummary: usage.reported ? `${usage.input} input / ${usage.output} output / ${usage.cached} cached tokens` : "Provider did not report token usage.",
+    usageReported: usage.reported,
+    requestId: typeof payload.id === "string" ? sanitizeProviderError(payload.id) : undefined,
   };
 }
 
@@ -175,16 +197,22 @@ function getModelPrice(modelId: string): ModelProfile | undefined {
   return getModelById(modelId) ?? modelCatalogue.find((entry) => entry.modelId === modelId || entry.displayName.toLowerCase() === modelId.toLowerCase());
 }
 
-function normalizeUsageUsage(data: Record<string, unknown>): { input: number; output: number; cached: number } {
+function normalizeUsageUsage(data: Record<string, unknown>): { input: number; output: number; cached: number; reported: boolean } {
   const usage = data.usage as Record<string, unknown> | undefined;
-  const promptTokens = Number((usage?.prompt_tokens as number | string | undefined) ?? 0);
-  const completionTokens = Number((usage?.completion_tokens as number | string | undefined) ?? 0);
-  const cacheReadTokens = Number((usage?.cache_read_input_tokens as number | string | undefined) ?? 0);
-  const cacheCreationTokens = Number((usage?.cache_creation_input_tokens as number | string | undefined) ?? 0);
+  if (!usage) return { input: 0, output: 0, cached: 0, reported: false };
+  const promptRaw = usage.prompt_tokens as number | string | undefined;
+  const completionRaw = usage.completion_tokens as number | string | undefined;
+  const cacheReadRaw = usage.cache_read_input_tokens as number | string | undefined;
+  const cacheCreationRaw = usage.cache_creation_input_tokens as number | string | undefined;
+  const promptTokens = Number(promptRaw ?? 0);
+  const completionTokens = Number(completionRaw ?? 0);
+  const cacheReadTokens = Number(cacheReadRaw ?? 0);
+  const cacheCreationTokens = Number(cacheCreationRaw ?? 0);
   return {
     input: Number.isFinite(promptTokens) ? promptTokens : 0,
     output: Number.isFinite(completionTokens) ? completionTokens : 0,
     cached: Number.isFinite(cacheReadTokens) ? cacheReadTokens + cacheCreationTokens : 0,
+    reported: promptRaw !== undefined || completionRaw !== undefined || cacheReadRaw !== undefined || cacheCreationRaw !== undefined,
   };
 }
 
@@ -367,7 +395,7 @@ class AnthropicAdapter extends BaseAdapter {
     const usage = { input: Number(usagePayload.input_tokens ?? 0), output: Number(usagePayload.output_tokens ?? 0), cached: Number(usagePayload.cache_read_input_tokens ?? 0) };
     const resolvedModel = String(result.payload.model ?? model);
     const actualCost = calculateNormalizedCost(resolvedModel, usage);
-    return { providerId: provider.id, model: resolvedModel, content, inputTokens: usage.input, outputTokens: usage.output, cachedTokens: usage.cached, latencyMs: result.latencyMs, finishReason: String(result.payload.stop_reason ?? "end_turn"), actualCost, projectedMonthlyCost: actualCost === null ? null : actualCost * 100_000, pricingSource: actualCost === null ? "Pricing unavailable" : "Demo catalogue pricing", provenance: "live-provider", isStructuredValid: parseStructuredContent(content, Boolean(request.structuredOutput)), warnings: actualCost === null ? ["Call cost unavailable because pricing is not configured."] : [], status: "success", usageSummary: `${usage.input} input / ${usage.output} output / ${usage.cached} cached tokens` };
+    return { providerId: provider.id, model: resolvedModel, content, inputTokens: usage.input, outputTokens: usage.output, cachedTokens: usage.cached, latencyMs: result.latencyMs, finishReason: String(result.payload.stop_reason ?? "end_turn"), actualCost, projectedMonthlyCost: actualCost === null ? null : actualCost * 100_000, pricingSource: actualCost === null ? "Pricing unavailable" : "Demo catalogue pricing", provenance: "live-provider", isStructuredValid: parseStructuredContent(content, Boolean(request.structuredOutput)), warnings: actualCost === null ? ["Call cost unavailable because pricing is not configured."] : [], status: "success", usageSummary: `${usage.input} input / ${usage.output} output / ${usage.cached} cached tokens`, usageReported: true };
   }
 }
 
@@ -378,18 +406,33 @@ class NvidiaAdapter extends BaseAdapter {
     const endpoint = provider.endpoint?.trim();
     if (!endpoint) return { ok: false, status: "Incomplete", message: "Provide an NVIDIA / NIM endpoint." };
     if (!provider.apiKey) return { ok: false, status: "Incomplete", message: "NVIDIA / NIM requires an API key." };
-    const result = await requestJson(endpointWithPath(endpoint, "/v1/models"), { method: "GET", headers: openAiHeaders(provider) });
-    const models = Array.isArray(result.payload.data) ? result.payload.data as Array<Record<string, unknown>> : [];
-    return { ok: true, status: "Connected", message: "NVIDIA endpoint validated.", detectedModel: provider.model || String(models[0]?.id ?? "meta/llama-3.1-8b-instruct"), sanitizedEndpoint: buildSafeEndpoint(endpoint), providerId: provider.id };
+    try {
+      const result = await requestJson(getNvidiaModelsUrl(endpoint), { method: "GET", headers: openAiHeaders(provider) });
+      const models = Array.isArray(result.payload.data) ? result.payload.data as Array<Record<string, unknown>> : [];
+      const selectedModel = provider.selectedModel || provider.model || NVIDIA_BUILD_DEFAULT_MODEL;
+      const modelIds = models.map((model) => String(model.id ?? ""));
+      return { ok: true, status: "Connected", message: "NVIDIA Build endpoint validated.", detectedModel: modelIds.includes(selectedModel) ? selectedModel : String(models[0]?.id ?? NVIDIA_BUILD_DEFAULT_MODEL), sanitizedEndpoint: buildSafeEndpoint(getNvidiaBuildBaseEndpoint(endpoint)), providerId: provider.id };
+    } catch {
+      return { ok: false, status: "Connection failed", message: "NVIDIA Build validation failed. Confirm the selected model works in NVIDIA Build Playground, then retry with the same model.", detectedModel: provider.selectedModel || provider.model || NVIDIA_BUILD_DEFAULT_MODEL, sanitizedEndpoint: buildSafeEndpoint(getNvidiaBuildBaseEndpoint(endpoint)), providerId: provider.id };
+    }
   }
 
   override async execute(provider: ProviderConfig, request: ProviderExecutionRequest): Promise<ProviderExecutionResult> {
     if (request.mode === "mock") return mockExecution(provider, request);
     const endpoint = provider.endpoint?.trim();
-    const model = request.model || provider.model || "meta/llama-3.1-8b-instruct";
+    const model = request.model || provider.selectedModel || provider.model || NVIDIA_BUILD_DEFAULT_MODEL;
+    const profile = getModelPrice(model);
     if (!endpoint || !provider.apiKey) throw new Error("NVIDIA endpoint and API key are required.");
-    const result = await requestJson(endpointWithPath(endpoint, "/v1/chat/completions"), { method: "POST", headers: openAiHeaders(provider), body: JSON.stringify({ model, messages: [{ role: "system", content: request.systemPrompt ?? "" }, { role: "user", content: request.prompt }], max_tokens: request.maxOutputTokens ?? 800, temperature: request.temperature ?? 0 }) });
-    return openAiResult(provider, request, result.payload, result.latencyMs);
+    try {
+      const result = await requestJson(getNvidiaChatCompletionsUrl(endpoint), {
+        method: "POST",
+        headers: openAiHeaders(provider),
+        body: JSON.stringify({ model, messages: [{ role: "system", content: request.systemPrompt ?? "" }, { role: "user", content: request.prompt }], max_tokens: request.maxOutputTokens ?? 800, temperature: request.temperature ?? profile?.recommendedTemperature ?? 1, top_p: request.topP ?? profile?.recommendedTopP, stream: false }),
+      });
+      return openAiResult(provider, request, result.payload, result.latencyMs);
+    } catch {
+      throw new Error("NVIDIA Build request failed. No provider key, authorization header, or raw upstream error was exposed.");
+    }
   }
 }
 
@@ -438,7 +481,7 @@ class OllamaAdapter extends BaseAdapter {
     const usage = { input: Number(result.payload.prompt_eval_count ?? 0), output: Number(result.payload.eval_count ?? 0), cached: 0 };
     const content = String(result.payload.response ?? "");
     const actualCost = calculateNormalizedCost(model, usage);
-    return { providerId: provider.id, model, content, inputTokens: usage.input, outputTokens: usage.output, cachedTokens: 0, latencyMs: result.latencyMs, finishReason: String(result.payload.done_reason ?? "stop"), actualCost, projectedMonthlyCost: actualCost === null ? null : actualCost * 100_000, pricingSource: actualCost === null ? "Pricing unavailable" : "Demo catalogue pricing", provenance: "live-provider", isStructuredValid: parseStructuredContent(content, Boolean(request.structuredOutput)), warnings: actualCost === null ? ["Call cost unavailable because pricing is not configured."] : [], status: "success", usageSummary: `${usage.input} input / ${usage.output} output / 0 cached tokens` };
+    return { providerId: provider.id, model, content, inputTokens: usage.input, outputTokens: usage.output, cachedTokens: 0, latencyMs: result.latencyMs, finishReason: String(result.payload.done_reason ?? "stop"), actualCost, projectedMonthlyCost: actualCost === null ? null : actualCost * 100_000, pricingSource: actualCost === null ? "Pricing unavailable" : "Demo catalogue pricing", provenance: "live-provider", isStructuredValid: parseStructuredContent(content, Boolean(request.structuredOutput)), warnings: actualCost === null ? ["Call cost unavailable because pricing is not configured."] : [], status: "success", usageSummary: `${usage.input} input / ${usage.output} output / 0 cached tokens`, usageReported: true };
   }
 }
 

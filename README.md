@@ -55,6 +55,8 @@ The full application includes contracts for Azure OpenAI, OpenAI, Anthropic, NVI
 
 Read [SECURITY_AND_BYOK.md](SECURITY_AND_BYOK.md). GitHub Pages is intentionally not used for live BYOK execution.
 
+Runtime catalogue, standalone boundary, and theme implementation details are documented in [MODEL_CATALOGUE.md](MODEL_CATALOGUE.md), [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md), and [THEME_SYSTEM.md](THEME_SYSTEM.md).
+
 ## Running locally
 
 ```bash
@@ -72,6 +74,7 @@ npm run lint
 npm test
 npm run build
 PUBLIC_DEMO=true npm run build:pages
+npm run scan:utf8
 ```
 
 ## GitHub Pages deployment
