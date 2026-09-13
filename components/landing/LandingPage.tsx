@@ -25,7 +25,7 @@ export function LandingPage() {
   };
 
   return (
-    <main id="main-content" className="min-h-[100dvh] bg-stone-100 text-stone-900">
+    <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 text-stone-900">
       <div className="mx-auto max-w-[1360px] px-4 py-5 sm:px-6 lg:px-10">
         <header className="landing-reveal flex min-h-16 items-center justify-between gap-4 border-b border-stone-300/80 pb-4">
           <Link href="/" className="group flex items-center gap-3" aria-label="BuildWise home">
@@ -48,7 +48,7 @@ export function LandingPage() {
 
         <section className="grid min-h-[calc(100dvh-6rem)] gap-10 py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-center lg:py-14">
           <div className="landing-reveal" style={{ "--reveal-delay": "80ms" } as CSSProperties}>
-            <p className="mb-4 max-w-[62ch] text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-800">
+            <p className="bw-text-accent mb-4 max-w-[62ch] text-[11px] font-semibold uppercase tracking-[0.22em]">
               Enterprise AI planning
             </p>
             <h1 className="max-w-[11ch] text-balance text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-stone-900 sm:text-6xl lg:text-7xl">
@@ -58,10 +58,10 @@ export function LandingPage() {
               Classify tasks, route models, forecast cost, and export a Build Kit finance and engineering can inspect.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/new" className="rounded-[8px] bg-stone-900 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-amber-900">
+              <Link href="/new" className="bw-action-primary rounded-[8px] px-5 py-3 text-center text-sm font-semibold">
                 Start blank
               </Link>
-              <button onClick={() => router.push("/workspace/demo-support-project/build-kit")} className="rounded-[8px] border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-800 hover:border-amber-700">
+              <button onClick={() => router.push("/workspace/demo-support-project/build-kit")} className="bw-action-secondary rounded-[8px] border px-5 py-3 text-sm font-semibold">
                 Inspect demo
               </button>
             </div>
@@ -91,7 +91,7 @@ export function LandingPage() {
                   ["Build Kit", "Exportable implementation artifacts"],
                 ].map(([label, detail], index) => (
                   <div key={label} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 border-t border-stone-200 pt-3 first:border-t-0 first:pt-0">
-                    <div className="font-mono text-sm tabular-nums text-amber-800">{String(index + 1).padStart(2, "0")}</div>
+                    <div className="bw-text-accent font-mono text-sm tabular-nums">{String(index + 1).padStart(2, "0")}</div>
                     <div>
                       <div className="text-sm font-semibold text-stone-900">{label}</div>
                       <div className="mt-1 text-sm leading-6 text-stone-600">{detail}</div>
@@ -130,20 +130,20 @@ export function LandingPage() {
               </h2>
               <div className="mt-8 grid gap-4 md:grid-cols-3">
                 {demoProject.buildPaths?.map((path) => (
-                  <article key={path.id} className={path.id === demoProject.recommendedBuildPath ? "rounded-xl border border-amber-700 bg-amber-50 p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
-                    <div className="text-base font-semibold text-stone-900">{path.label}</div>
-                    <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-amber-800">{path.fitScore}%</div>
-                    <p className="mt-3 text-sm leading-6 text-stone-600">{path.summary}</p>
+                  <article key={path.id} className={path.id === demoProject.recommendedBuildPath ? "bw-surface-selected rounded-xl border p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
+                    <div className="bw-text-primary text-base font-semibold">{path.label}</div>
+                    <div className="bw-text-accent mt-2 font-mono text-2xl font-semibold tabular-nums">{path.fitScore}%</div>
+                    <p className="bw-text-secondary mt-3 text-sm leading-6">{path.summary}</p>
                   </article>
                 ))}
               </div>
             </div>
-            <div className="rounded-2xl border border-stone-300 bg-stone-900 p-6 text-white shadow-sm">
+            <div className="bw-surface-inverse rounded-2xl border p-6 shadow-sm">
               <div className="text-sm font-semibold text-amber-200">Governance posture</div>
-              <p className="mt-4 text-pretty text-2xl font-semibold leading-tight tracking-[-0.045em] text-white">
+              <p className="mt-4 text-pretty text-2xl font-semibold leading-tight tracking-[-0.045em]">
                 {reviewTasks} review gates remain visible before any consequential answer is accepted.
               </p>
-              <div className="mt-6 space-y-3 text-sm leading-6 text-stone-200">
+              <div className="bw-text-muted mt-6 space-y-3 text-sm leading-6">
                 <div>Provider credentials stay out of public-demo exports.</div>
                 <div>Provider-reported usage is separated from simulated demo evidence.</div>
                 <div>Fallback policy is explicit before production rollout.</div>
@@ -170,7 +170,7 @@ export function LandingPage() {
               >
                 <div className="text-base font-semibold text-stone-900">{example.projectName}</div>
                 <p className="mt-3 text-sm leading-6 text-stone-600">{example.problemStatement}</p>
-                <div className="mt-5 text-sm font-semibold text-amber-900">Open scenario</div>
+                <div className="bw-text-accent mt-5 text-sm font-semibold">Open scenario</div>
               </button>
             ))}
           </div>
@@ -192,10 +192,10 @@ function MetricTile({ label, value, detail }: { label: string; value: string; de
 
 function CostTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={accent ? "rounded-xl border border-amber-700 bg-amber-50 p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
-      <div className="text-sm font-medium text-stone-600">{label}</div>
-      <div className="mt-2 font-mono text-xl font-semibold tabular-nums text-stone-900">{value}</div>
-      <div className="mt-1 text-xs text-stone-600">Demo catalogue pricing</div>
+    <div className={accent ? "bw-surface-selected rounded-xl border p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
+      <div className="bw-text-secondary text-sm font-medium">{label}</div>
+      <div className="bw-text-primary mt-2 font-mono text-xl font-semibold tabular-nums">{value}</div>
+      <div className="bw-text-secondary mt-1 text-xs">Demo catalogue pricing</div>
     </div>
   );
 }

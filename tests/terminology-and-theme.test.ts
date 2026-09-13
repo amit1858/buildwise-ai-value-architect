@@ -12,10 +12,20 @@ describe("runtime documentation and configuration", () => {
     expect(content).not.toMatch(new RegExp(excludedTerms.join("|")));
   });
 
-  it("keeps provider theme surfaces scoped", () => {
+  it("keeps BuildWise theme surfaces paired and scoped", () => {
     const css = read("app/globals.css");
     expect(css).toContain(".bw-page");
     expect(css).toContain(".bw-panel");
+    expect(css).toContain("--surface-primary");
+    expect(css).toContain("--surface-primary-fg");
+    expect(css).toContain("--surface-inverse");
+    expect(css).toContain("--surface-inverse-fg");
+    expect(css).toContain("--surface-selected");
+    expect(css).toContain("--surface-selected-fg");
+    expect(css).toContain("--action-primary");
+    expect(css).toContain("--action-primary-fg");
+    expect(css).not.toMatch(/^\.(?:bg|text)-stone-[^{]+\{[^}]*!important/gm);
+    expect(css).not.toMatch(/^\[class\*="border-stone-"\]/m);
     expect(css).toContain(":focus-visible");
   });
 

@@ -197,7 +197,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
           <Link href="/" className="text-sm text-stone-700 underline-offset-2 hover:underline">Back to home</Link>
         </header>
 
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="bw-panel rounded-2xl p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Operating mode</div>
@@ -208,7 +208,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                     type="button"
                     disabled={isPublicShowcase && mode === "live-byok"}
                     onClick={() => setWorkingMode(mode)}
-                    className={workingMode === mode ? "rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white" : "rounded-full px-4 py-2 text-sm font-medium text-stone-600"}
+                    className={workingMode === mode ? "bw-action-primary rounded-full px-4 py-2 text-sm font-medium" : "rounded-full px-4 py-2 text-sm font-medium text-stone-600"}
                   >
                     {mode === "demo" ? "Demo" : "Live BYOK"}
                   </button>
@@ -230,7 +230,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                 ? "Live BYOK is unavailable until a provider is successfully validated."
                 : "Live BYOK is active for the current session and no provider secret is retained after refresh."}
           </div>
-          {standaloneUrl && <a href={standaloneUrl} className="mt-4 inline-flex rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white">Open standalone application</a>}
+          {standaloneUrl && <a href={standaloneUrl} className="bw-action-primary mt-4 inline-flex rounded-lg px-4 py-2 text-sm font-medium">Open standalone application</a>}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -239,7 +239,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
               const isSelected = selectedProviderId === provider.id;
               const status = provider.status ?? "Not configured";
               return (
-                <div key={provider.id} className={isSelected ? "rounded-2xl border border-stone-900 bg-white p-4 shadow-sm" : "rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"}>
+                <div key={provider.id} className={isSelected ? "bw-panel bw-panel-selected rounded-2xl p-4 shadow-sm" : "bw-panel rounded-2xl p-4 shadow-sm"}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">{provider.kind}</div>
@@ -265,7 +265,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
             })}
           </div>
 
-          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="bw-panel rounded-2xl p-6 shadow-sm">
             {selectedProvider && (
               <>
                 <div className="mb-5 flex items-center justify-between gap-4">
@@ -330,7 +330,7 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button type="button" disabled={isPublicShowcase || busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">
+                  <button type="button" disabled={isPublicShowcase || busyProviderId === selectedProvider.id} onClick={() => validateProvider(selectedProvider)} className="bw-action-primary rounded-full px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:bg-stone-400">
                     {busyProviderId === selectedProvider.id ? "Validating…" : "Validate connection"}
                   </button>
                   <button type="button" onClick={() => clearProvider(selectedProvider.id)} className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700">Clear configuration</button>

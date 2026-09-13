@@ -136,12 +136,12 @@ export default function ResultsPage() {
 
   if (!result) {
     return (
-      <main id="main-content" className="min-h-[100dvh] bg-stone-100 flex flex-col items-center justify-center px-6">
-        <span className="text-4xl text-[#E1DBC6] mb-5 select-none" aria-hidden="true">B</span>
-        <p className="text-[#5F4E41] text-sm mb-5">No plan found.</p>
+      <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 flex flex-col items-center justify-center px-6">
+        <span className="bw-text-muted mb-5 select-none text-4xl" aria-hidden="true">B</span>
+        <p className="bw-text-secondary mb-5 text-sm">No plan found.</p>
         <Link
           href="/"
-          className="text-sm font-semibold text-[#3B230E] underline underline-offset-4 hover:text-[#705B31] transition-colors"
+          className="bw-text-accent text-sm font-semibold underline underline-offset-4 transition-colors"
         >
           ← Start a new plan
         </Link>
@@ -154,7 +154,7 @@ export default function ResultsPage() {
   const failedModules = moduleEntries.filter(([, m]) => m.error).length;
 
   return (
-    <div className="min-h-screen bg-[#FEF9ED]">
+    <div className="bw-page bw-results min-h-screen bg-[#FEF9ED]">
 
       {/* Top bar */}
       <header className="sticky top-0 z-10 border-b border-[#E1DBC6] bg-[#FEF9ED]/95 backdrop-blur-sm px-8 py-[18px]">
@@ -403,12 +403,12 @@ function ExecutionItemCard({ item }: { item: ExecutionItem }) {
         <div className="flex items-center gap-3">
           {isPrompt && (
             <>
-              <span className="text-[10px] font-bold text-[#E5B85C]/60 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#E5B85C] uppercase tracking-wider">
                 Paste into builder
               </span>
               <CopyButton
                 text={item.content as string}
-                className="text-[#E5B85C]/60 hover:text-[#E5B85C]"
+                className="text-[#E5B85C] hover:text-white"
               />
             </>
           )}
@@ -549,11 +549,11 @@ function ModuleCard({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <ModuleSection label="Reasoning" content={mod.reasoning} />
-            <ModuleListSection label="Tradeoffs" items={mod.tradeoffs} bulletColor="#E5B85C" />
+            <ModuleListSection label="Tradeoffs" items={mod.tradeoffs} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-7">
-            <ModuleListSection label="Risks" items={mod.risks} bulletColor="#C46A4A" />
-            <ModuleListSection label="Next Steps" items={mod.nextSteps} bulletColor="#4A8A5C" numbered />
+            <ModuleListSection label="Risks" items={mod.risks} />
+            <ModuleListSection label="Next Steps" items={mod.nextSteps} numbered />
           </div>
 
           <div className="border-t border-[#E8D9C4] pt-5">
@@ -626,12 +626,10 @@ function ModuleSection({ label, content }: { label: string; content: string }) {
 function ModuleListSection({
   label,
   items,
-  bulletColor,
   numbered = false,
 }: {
   label: string;
   items: string[];
-  bulletColor: string;
   numbered?: boolean;
 }) {
   return (
@@ -640,10 +638,7 @@ function ModuleListSection({
       <ul className="flex flex-col gap-1.5">
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-2 text-sm text-[#3B230E] leading-snug">
-            <span
-              className="mt-[3px] shrink-0 text-[10px] font-bold"
-              style={{ color: bulletColor }}
-            >
+            <span className="bw-text-accent mt-[3px] shrink-0 text-[10px] font-bold">
               {numbered ? `${i + 1}.` : "›"}
             </span>
             <span>{item}</span>
