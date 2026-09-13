@@ -158,6 +158,12 @@ test.describe("BuildWise visual accessibility", () => {
   });
 
   test("populated results remain accessible in light and dark themes", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => consoleErrors.push(error.message));
+
     await page.addInitScript((result) => {
       sessionStorage.setItem("buildwise_result", JSON.stringify(result));
     }, seededResult);
@@ -175,6 +181,7 @@ test.describe("BuildWise visual accessibility", () => {
     await expectNoSeriousAccessibilityViolations(page);
     const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(mobileOverflow, "populated results overflowed at 390x844").toBeLessThanOrEqual(1);
+    expect(consoleErrors).toEqual([]);
   });
 
   test("representative routes remain usable at required responsive viewports", async ({ page }) => {

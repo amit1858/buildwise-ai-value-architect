@@ -1,30 +1,34 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { GenerateResponse, ModuleOutput, ExecutionItem } from "@/lib/types";
 
 export default function ResultsPage() {
-  const [result] = useState<GenerateResponse | null>(() => {
-    if (typeof window === "undefined") return null;
-    const raw = window.sessionStorage.getItem("buildwise_result");
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as GenerateResponse;
-    } catch {
-      return null;
-    }
-  });
-  const [modules, setModules] = useState<Record<string, ModuleOutput>>(() => {
-    if (typeof window === "undefined") return {};
-    const raw = window.sessionStorage.getItem("buildwise_result");
-    if (!raw) return {};
-    try {
-      return (JSON.parse(raw) as GenerateResponse).modules ?? {};
-    } catch {
-      return {};
-    }
-  });
+  const [result, setResult] = useState<GenerateResponse | null>(null);
+  const [modules, setModules] = useState<Record<string, ModuleOutput>>({});
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const raw = window.sessionStorage.getItem("buildwise_result");
+      if (raw) {
+        try {
+          const storedResult = JSON.parse(raw) as GenerateResponse;
+          setResult(storedResult);
+          setModules(storedResult.modules ?? {});
+        } catch {
+          window.sessionStorage.removeItem("buildwise_result");
+        }
+      }
+      setIsHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
   const [feedback, setFeedback] = useState<Record<string, string>>({});
@@ -132,6 +136,14 @@ export default function ResultsPage() {
     a.download = "buildwise-plan.txt";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  if (!isHydrated) {
+    return (
+      <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 flex items-center justify-center px-6">
+        <p className="bw-text-secondary text-sm">Loading plan…</p>
+      </main>
+    );
   }
 
   if (!result) {
