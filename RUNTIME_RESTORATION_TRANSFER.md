@@ -1,6 +1,15 @@
 # Runtime restoration transfer matrix
 
-Source reference: PR #2, commit `65ec8ea23a18c31f2ba33fffd64cb716f53d87e6`. This document records a semantic diff transfer only; source Git history was not copied.
+## Historical implementation provenance
+
+The historical source reference supplied during transfer was
+[`pandeyamit_microsoft/buildwise-copilot#2`](https://github.com/pandeyamit_microsoft/buildwise-copilot/pull/2),
+commit `65ec8ea23a18c31f2ba33fffd64cb716f53d87e6`. Its current status could not be
+independently verified because the authenticated GitHub account cannot access
+that repository. It is read-only historical provenance, not an active
+dependency. The reconciled implementation and all active development now live
+in [`amit1858/buildwise-ai-value-architect`](https://github.com/amit1858/buildwise-ai-value-architect).
+Source Git history was not copied.
 
 | Source file | Target equivalent | Action | Conflict risk | Verification |
 | --- | --- | --- | --- | --- |
