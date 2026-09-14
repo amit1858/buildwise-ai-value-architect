@@ -307,6 +307,23 @@ textarea.field { resize: vertical; }
   .bw-results > main { padding-left: .75rem; padding-right: .75rem; }
   .bw-results pre { max-width: 100%; overflow-x: auto; }
   .bw-results button, .bw-results a, .bw-results p, .bw-results span { overflow-wrap: anywhere; }
+  .workspace-nav { padding-bottom: .75rem; }
+  .workspace-nav > div:first-child { margin-bottom: .75rem; }
+  .workspace-section-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(148px, 42vw);
+    gap: .5rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: .35rem;
+    scrollbar-width: thin;
+  }
+  .workspace-section-nav a { min-height: 44px; }
+  .workspace-status { display: none; }
+  .workspace-main > header { gap: .75rem; }
+  .workspace-main > header > div:last-child { gap: .5rem; }
+  .workspace-context { padding-top: 1rem; }
 }
 
 @media print {

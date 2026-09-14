@@ -111,7 +111,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
   return (
     <div className="bw-page min-h-screen bg-stone-100 text-stone-900">
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="w-full border-b border-stone-200 bg-white p-4 lg:w-72 lg:border-b-0 lg:border-r">
+        <aside className="workspace-nav w-full border-b border-stone-200 bg-white p-4 lg:w-72 lg:border-b-0 lg:border-r">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">BuildWise</div>
@@ -120,7 +120,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
             <button onClick={handleDelete} className="rounded-full border border-stone-200 px-2 py-1 text-xs text-stone-600 hover:border-stone-400">Delete</button>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="workspace-section-nav space-y-2">
             {getProjectNavigationSections().map((item) => (
               <Link
                 key={item.id}
@@ -133,14 +133,14 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
             ))}
           </nav>
 
-          <div className="mt-8 rounded-xl border border-stone-200 bg-stone-50 p-3">
+          <div className="workspace-status mt-8 rounded-xl border border-stone-200 bg-stone-50 p-3">
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Status</div>
             <div className="mt-3 text-sm text-stone-700">Provider status: demo</div>
             <div className="mt-1 text-sm text-stone-700">Budget: {project.input.monthlyBudget ? formatMoney(project.input.monthlyBudget) : "Not set"}</div>
           </div>
         </aside>
 
-        <main id="main-content" className="flex-1 p-4 md:p-8">
+        <main id="main-content" className="workspace-main min-w-0 flex-1 p-4 md:p-8">
           <header className="mb-6 flex flex-col justify-between gap-4 border-b border-stone-200 pb-5 md:flex-row md:items-center">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Workspace</p>
@@ -191,7 +191,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
           {activeSection === "build-kit" && <BuildKitPanel project={project} estimate={estimate} />}
         </main>
 
-        <aside className="w-full border-t border-stone-200 bg-white p-4 lg:w-80 lg:border-l lg:border-t-0">
+        <aside className="workspace-context w-full border-t border-stone-200 bg-white p-4 lg:w-80 lg:border-l lg:border-t-0">
           <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Context</div>
           <div className="space-y-4 text-sm text-stone-600">
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
