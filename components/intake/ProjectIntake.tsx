@@ -1,40 +1,53 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getDefaultProjectInput, type IntakeForm } from "@/lib/buildwise";
+import { getBlankProjectInput, type IntakeForm, type WorkloadUnit } from "@/lib/buildwise";
+import { createBlankProjectState, deleteProjectState, loadProjectState, migrateLegacyBrowserState, saveDraftState } from "@/lib/project-state";
 import { createProjectFromInput } from "@/lib/project-store";
+import { workspaceHref } from "@/lib/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 
-const STORAGE_KEY = "buildwise-intake-draft";
 const stepLabels = ["Business problem", "Workload and volume", "Quality, risk and governance", "Budget and build preference"];
-
-const EMPTY_FORM: IntakeForm = getDefaultProjectInput();
 
 export function ProjectIntake() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedProjectId = searchParams.get("project");
+  const [projectId, setProjectId] = useState(requestedProjectId ?? "");
   const [stepIndex, setStepIndex] = useState(0);
-  const [form, setForm] = useState<IntakeForm>(() => {
-    if (typeof window === "undefined") return EMPTY_FORM;
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      return raw ? { ...EMPTY_FORM, ...JSON.parse(raw) } : EMPTY_FORM;
-    } catch {
-      return EMPTY_FORM;
-    }
-  });
+  const [form, setForm] = useState<IntakeForm>(getBlankProjectInput);
+  const [ready, setReady] = useState(false);
+  const [stateError, setStateError] = useState("");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-    }
-  }, [form]);
+    migrateLegacyBrowserState();
+    const id = requestedProjectId || createBlankProjectState().projectId;
+    const loaded = loadProjectState(id);
+    queueMicrotask(() => {
+      if (loaded.ok) {
+        setProjectId(id);
+        setForm(loaded.state.intake);
+        setStepIndex(loaded.state.intakeStep);
+        setReady(true);
+      } else {
+        setStateError(loaded.message);
+        setReady(true);
+      }
+    });
+  }, [requestedProjectId]);
 
   const currentStep = stepLabels[stepIndex];
 
   const update = <K extends keyof IntakeForm>(key: K, value: IntakeForm[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
+    const next = { ...form, [key]: value };
+    setForm(next);
+    if (projectId) saveDraftState(projectId, next, stepIndex);
+  };
+  const updateMany = (patch: Partial<IntakeForm>) => {
+    const next = { ...form, ...patch };
+    setForm(next);
+    if (projectId) saveDraftState(projectId, next, stepIndex);
   };
 
   const canContinue = useMemo(() => {
@@ -45,23 +58,37 @@ export function ProjectIntake() {
 
   const isLastStep = stepIndex === stepLabels.length - 1;
 
-  const handleNext = () => {
+  const handleNext = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     if (stepIndex < stepLabels.length - 1 && canContinue) {
-      setStepIndex((current) => current + 1);
+      const next = stepIndex + 1;
+      saveDraftState(projectId, form, next);
+      setStepIndex(next);
     }
   };
 
   const handleBack = () => {
-    setStepIndex((current) => Math.max(0, current - 1));
+    const next = Math.max(0, stepIndex - 1);
+    saveDraftState(projectId, form, next);
+    setStepIndex(next);
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!canContinue) return;
-    const project = createProjectFromInput(form);
-    if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
-    router.push(`/workspace/${project.id}/spine`);
+    const project = createProjectFromInput(form, projectId);
+    router.push(workspaceHref(project.id, "spine"));
   };
+
+  const handleReset = () => {
+    if (!window.confirm("Start over and clear only this project? This cannot be undone.")) return;
+    deleteProjectState(projectId);
+    const replacement = createBlankProjectState();
+    router.replace(`/new?project=${encodeURIComponent(replacement.projectId)}`);
+  };
+
+  if (!ready) return <main className="bw-page p-10 text-stone-700">Loading browser-local draft…</main>;
+  if (stateError) return <main className="bw-page p-10 text-stone-700"><h1 className="text-2xl font-semibold">Saved project cannot be opened</h1><p className="mt-3">{stateError}</p><button type="button" onClick={() => { const next = createBlankProjectState(); router.replace(`/new?project=${encodeURIComponent(next.projectId)}`); }} className="bw-action-primary mt-5">Start a clean blueprint</button></main>;
 
   return (
     <div className="bw-page min-h-[100dvh]">
@@ -94,7 +121,7 @@ export function ProjectIntake() {
                 <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-stone-500">Current step</div>
                 <div className="mt-2 text-2xl font-semibold text-stone-900">{currentStep}</div>
               </div>
-              <div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">Autosave on</div>
+              <div className="flex items-center gap-2"><div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">Browser-local autosave</div><button type="button" onClick={handleReset} className="rounded-full border border-red-200 px-3 py-1 text-xs font-medium text-red-700">Reset</button></div>
             </div>
 
             {stepIndex === 0 && (
@@ -115,8 +142,8 @@ export function ProjectIntake() {
             {stepIndex === 1 && (
               <>
                 <div className="grid gap-5 md:grid-cols-3">
-                  <Field label="Monthly execution volume"><input type="number" value={form.executionsPerMonth} onChange={(e) => update("executionsPerMonth", Number(e.target.value || 1))} className="field" /></Field>
-                  <Field label="Peak concurrency"><input type="number" value={form.peakConcurrency} onChange={(e) => update("peakConcurrency", Number(e.target.value || 1))} className="field" /></Field>
+                  <Field label="Business executions per month"><input type="number" min="1" value={form.executionsPerMonth || ""} onChange={(e) => update("executionsPerMonth", Number(e.target.value || 0))} className="field" /></Field>
+                  <Field label="Peak concurrency"><input type="number" min="1" value={form.peakConcurrency || ""} onChange={(e) => update("peakConcurrency", Number(e.target.value || 0))} className="field" /></Field>
                   <Field label="Workload mode">
                     <select value={form.workloadMode} onChange={(e) => update("workloadMode", e.target.value as IntakeForm["workloadMode"])} className="field">
                       <option value="batch">Batch</option>
@@ -125,15 +152,28 @@ export function ProjectIntake() {
                     </select>
                   </Field>
                 </div>
-                <div className="grid gap-5 md:grid-cols-2">
-                  <Field label="Typical input size (selectable units)"><input value={form.typicalInputSize} onChange={(e) => update("typicalInputSize", e.target.value)} className="field" /></Field>
-                  <Field label="Typical output size (selectable units)"><input value={form.typicalOutputSize} onChange={(e) => update("typicalOutputSize", e.target.value)} className="field" /></Field>
+                <div className="grid gap-5 md:grid-cols-3">
+                  <SizeField label="Typical input" value={form.typicalInputValue} unit={form.typicalInputUnit} onValue={(value) => update("typicalInputValue", value)} onUnit={(unit) => update("typicalInputUnit", unit)} />
+                  <SizeField label="High-case / P95 input" value={form.highInputValue} unit={form.highInputUnit} onValue={(value) => update("highInputValue", value)} onUnit={(unit) => update("highInputUnit", unit)} />
+                  <SizeField label="Typical output" value={form.typicalOutputValue} unit={form.typicalOutputUnit} onValue={(value) => update("typicalOutputValue", value)} onUnit={(unit) => update("typicalOutputUnit", unit)} />
                 </div>
                 <div className="grid gap-5 md:grid-cols-2">
-                  <Field label="Attached documents"><input type="number" value={form.attachedDocuments} onChange={(e) => update("attachedDocuments", Number(e.target.value || 0))} className="field" /></Field>
-                  <Field label="Conversation history"><select value={form.conversationHistory ? "yes" : "no"} onChange={(e) => update("conversationHistory", e.target.value === "yes")} className="field"><option value="yes">Yes</option><option value="no">No</option></select></Field>
+                  <Field label="Average attachments per execution"><input type="number" min="0" value={form.attachedDocuments} onChange={(e) => update("attachedDocuments", Number(e.target.value || 0))} className="field" /></Field>
+                  <Field label="Average conversation turns"><input type="number" min="0" value={form.averageConversationTurns} onChange={(e) => updateMany({ averageConversationTurns: Number(e.target.value || 0), conversationHistory: Number(e.target.value || 0) > 0 })} className="field" /></Field>
                 </div>
                 <Field label="Sample input"><textarea rows={4} value={form.sampleInput} onChange={(e) => update("sampleInput", e.target.value)} className="field min-h-[110px]" /></Field>
+                <details className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <summary className="cursor-pointer text-sm font-medium">Advanced assumptions</summary>
+                  <div className="mt-4 grid gap-5 md:grid-cols-2">
+                    <Field label="Average attachment pages or size"><input type="number" min="0" value={form.averageAttachmentPages} onChange={(e) => update("averageAttachmentPages", Number(e.target.value || 0))} className="field" /></Field>
+                    <Field label="Retrieved passages per execution"><input type="number" min="0" value={form.retrievedPassages} onChange={(e) => update("retrievedPassages", Number(e.target.value || 0))} className="field" /></Field>
+                    <Field label="Average tokens per passage"><input type="number" min="0" value={form.tokensPerPassage} onChange={(e) => update("tokensPerPassage", Number(e.target.value || 0))} className="field" /></Field>
+                    <Field label="Reusable / cached context (%)"><input type="number" min="0" max="100" value={form.cachedContextPercent} onChange={(e) => update("cachedContextPercent", Number(e.target.value || 0))} className="field" /></Field>
+                    <Field label="Peak-volume multiplier"><input type="number" min="1" step="0.1" value={form.peakVolumeMultiplier} onChange={(e) => update("peakVolumeMultiplier", Number(e.target.value || 1))} className="field" /></Field>
+                    <Field label="Target response time (seconds)"><input type="number" min="0" value={form.targetResponseSeconds} onChange={(e) => updateMany({ targetResponseSeconds: Number(e.target.value || 0), latencyTarget: `${e.target.value || 0} seconds` })} className="field" /></Field>
+                  </div>
+                  <p className="mt-4 text-xs leading-5 text-stone-500">Conversions use transparent planning assumptions: 1 word = 1.33 tokens, 1 page = 500 tokens, and 4 characters = 1 token. Business executions are not model calls; calls are derived from task routing, retries, and fallbacks.</p>
+                </details>
               </>
             )}
 
@@ -186,7 +226,7 @@ export function ProjectIntake() {
             <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-between">
               <button type="button" onClick={handleBack} disabled={stepIndex === 0} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 disabled:cursor-not-allowed disabled:opacity-40">Back</button>
               {!isLastStep ? (
-                <button type="button" onClick={handleNext} disabled={!canContinue} className="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Continue</button>
+                <button key={`continue-${stepIndex}`} type="button" onClick={handleNext} disabled={!canContinue} className="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Continue</button>
               ) : (
                 <button type="submit" className="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-white">Review and analyse</button>
               )}
@@ -226,5 +266,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-2 block font-medium text-stone-800">{label}</span>
       {children}
     </label>
+  );
+}
+
+function SizeField({ label, value, unit, onValue, onUnit }: { label: string; value: number; unit: WorkloadUnit; onValue: (value: number) => void; onUnit: (unit: WorkloadUnit) => void }) {
+  return (
+    <Field label={label}>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <input aria-label={`${label} value`} type="number" min="0" value={value || ""} onChange={(event) => onValue(Number(event.target.value || 0))} className="field" />
+        <select aria-label={`${label} unit`} value={unit} onChange={(event) => onUnit(event.target.value as WorkloadUnit)} className="field">
+          <option value="tokens">tokens</option><option value="words">words</option><option value="pages">pages</option><option value="characters">characters</option>
+        </select>
+      </div>
+    </Field>
   );
 }

@@ -36,7 +36,7 @@ describe("cost trace", () => {
 
   it("keeps deterministic retrieval visible without manufacturing model cost", () => {
     const project = buildDemoProject();
-    const retrieval = project.scenarios.find((scenario) => scenario.id === "balanced")?.costTrace?.tasks?.find((task) => task.taskId === "policy");
+    const retrieval = project.scenarios.find((scenario) => scenario.id === "balanced")?.costTrace?.tasks?.find((task) => task.taskId === "policy-retrieval");
     expect(retrieval?.model).toBe("Deterministic execution");
     expect(retrieval?.costPerExecution).toBe(0);
     expect(retrieval?.priceSource).toContain("Deterministic");

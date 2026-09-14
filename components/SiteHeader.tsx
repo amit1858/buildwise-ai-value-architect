@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeControl } from "@/components/ThemeControl";
-import { ensureSeedProject } from "@/lib/project-store";
+import { createBlankProjectState, listProjectStates, migrateLegacyBrowserState } from "@/lib/project-state";
+import { workspaceHref } from "@/lib/navigation";
 
 export function SiteHeader({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const openWorkspace = () => {
-    const project = ensureSeedProject();
-    router.push(`/workspace/${project.id}/spine`);
+    migrateLegacyBrowserState();
+    const latest = listProjectStates().filter((state) => state.project && state.kind !== "demo").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    router.push(latest?.project ? workspaceHref(latest.projectId, "spine") : "/");
+  };
+  const startBlueprint = () => {
+    const state = createBlankProjectState();
+    router.push(`/new?project=${encodeURIComponent(state.projectId)}`);
   };
 
   return (
@@ -37,7 +43,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
               Open workspace
             </button>
           )}
-          <Link href="/new" className="bw-action-primary site-cta">Start blueprint</Link>
+          <button type="button" onClick={startBlueprint} className="bw-action-primary site-cta">Start blueprint</button>
         </div>
 
         <details className="mobile-menu">
@@ -48,7 +54,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
             <Link href="/settings/providers">Providers</Link>
             <a href="https://github.com/amit1858/buildwise-ai-value-architect">GitHub</a>
             <button type="button" onClick={openWorkspace}>Open workspace</button>
-            <Link href="/new">Start blueprint</Link>
+            <button type="button" onClick={startBlueprint}>Start blueprint</button>
             <ThemeControl />
           </div>
         </details>

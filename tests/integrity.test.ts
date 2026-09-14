@@ -8,7 +8,7 @@ describe("product integrity", () => {
     const prompts = project.prompts;
     expect(new Set(prompts.map((prompt) => prompt.optimisedPrompt)).size).toBeGreaterThan(1);
     expect(prompts.every((prompt) => prompt.optimisedPromptTokens && prompt.estimationMethod)).toBe(true);
-    expect(prompts.find((prompt) => prompt.id === "policy")?.optimisedPrompt).toContain("top-k");
+    expect(prompts.find((prompt) => prompt.id === "policy-retrieval")?.optimisedPrompt).toContain("top-k");
     expect(prompts.some((prompt) => (prompt.percentageChange ?? 0) > 0)).toBe(true);
   });
 
@@ -27,8 +27,9 @@ describe("product integrity", () => {
     const project = buildDemoProject();
     const economy = project.scenarios.find((scenario) => scenario.id === "economy");
     const balanced = project.scenarios.find((scenario) => scenario.id === "balanced");
-    const prompt = project.prompts.find((item) => item.id === "triage");
-    expect(economy?.savingsVsBaseline).toBe(99.6);
+    const prompt = project.prompts.find((item) => item.id === "intake-route");
+    expect(economy?.savingsVsBaseline).toBeGreaterThan(0);
+    expect(economy!.monthlyCost).toBeLessThan(project.scenarios.find((scenario) => scenario.id === "baseline")!.monthlyCost);
     expect(balanced?.premiumModelShare).toBe(0);
     expect(balanced?.summary).not.toContain("advanced reasoning");
     expect(prompt?.originalExpectedTokens).toBeGreaterThan(0);

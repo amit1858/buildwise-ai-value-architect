@@ -128,20 +128,22 @@ test.describe("BuildWise visual accessibility", () => {
 
   test("reported contrast regressions and focus treatment remain corrected", async ({ page }) => {
     await openWithTheme(page, "/", "dark", "light");
-    await expect(page.getByRole("link", { name: "Start blueprint" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start blueprint" })).toBeVisible();
     await expect(page.getByText("Recommended policy", { exact: true })).toBeVisible();
     await expect(page.getByText("Architecture and trust boundary", { exact: true })).toBeVisible();
     await expectNoSeriousAccessibilityViolations(page);
 
-    await page.getByRole("link", { name: "Start blueprint" }).focus();
-    const focus = await page.getByRole("link", { name: "Start blueprint" }).evaluate((element) => {
+    await page.getByRole("button", { name: "Start blueprint" }).focus();
+    const focus = await page.getByRole("button", { name: "Start blueprint" }).evaluate((element) => {
       const style = getComputedStyle(element);
       return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
     });
     expect(focus.outlineStyle).not.toBe("none");
     expect(Number.parseFloat(focus.outlineWidth)).toBeGreaterThanOrEqual(2);
 
-    await page.goto("/workspace/demo-support-project/build-path", { waitUntil: "networkidle" });
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Explore customer-support demo" }).click();
+    await page.getByRole("link", { name: "Build path" }).click();
     await expect(page.getByText("Pro-code", { exact: true })).toBeVisible();
     await expectNoSeriousAccessibilityViolations(page);
 
@@ -246,7 +248,8 @@ test.describe("BuildWise visual accessibility", () => {
     await expect(page).toHaveScreenshot("landing-light.png", { fullPage: true, maxDiffPixelRatio: 0.01 });
     await openWithTheme(page, "/", "dark", "light");
     await expect(page).toHaveScreenshot("landing-dark.png", { fullPage: true, maxDiffPixelRatio: 0.01 });
-    await page.goto("/workspace/demo-support-project/build-path", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Explore customer-support demo" }).click();
+    await page.getByRole("link", { name: "Build path" }).click();
     await expect(page).toHaveScreenshot("build-path-dark.png", { fullPage: true, maxDiffPixelRatio: 0.01 });
   });
 });
