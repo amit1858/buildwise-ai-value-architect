@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { GenerateResponse, ModuleOutput, ExecutionItem } from "@/lib/types";
+import { ThemeControl } from "@/components/ThemeControl";
 
 export default function ResultsPage() {
   const [result, setResult] = useState<GenerateResponse | null>(null);
@@ -178,6 +179,7 @@ export default function ResultsPage() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeControl />
             {metadata && (
               <span className="text-[11px] text-[#B8A090]">
                 {metadata.modulesGenerated} modules · {metadata.mode} mode

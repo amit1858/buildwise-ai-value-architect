@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getDefaultProjectInput, type IntakeForm } from "@/lib/buildwise";
 import { createProjectFromInput } from "@/lib/project-store";
+import { SiteHeader } from "@/components/SiteHeader";
 
 const STORAGE_KEY = "buildwise-intake-draft";
 const stepLabels = ["Business problem", "Workload and volume", "Quality, risk and governance", "Budget and build preference"];
@@ -63,14 +64,16 @@ export function ProjectIntake() {
   };
 
   return (
-    <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
+    <div className="bw-page min-h-[100dvh]">
+      <SiteHeader compact />
+      <main id="main-content" className="bg-stone-100 px-4 py-8 text-stone-900 md:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-6 flex items-center justify-between border-b border-stone-300 pb-4">
+        <header className="mb-6 border-b border-stone-300 pb-4">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-stone-500">BuildWise</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-stone-500">Enterprise use-case intake</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-stone-900">Describe the use case</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">These visible inputs drive suitability, build-path selection, workload decomposition, scenario economics and every exported artifact.</p>
           </div>
-          <Link href="/" className="text-sm text-stone-700 underline-offset-2 hover:underline">Back to home</Link>
         </header>
 
         <div className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -212,7 +215,8 @@ export function ProjectIntake() {
           </aside>
         </form>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
