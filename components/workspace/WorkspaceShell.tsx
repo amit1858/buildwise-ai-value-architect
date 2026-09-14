@@ -8,6 +8,7 @@ import { buildCompleteExportBundle, generateBuildArtifacts, generateCopilotInstr
 import { deleteProject, getProjectById, saveProject } from "@/lib/project-store";
 import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-session";
 import { executeProviderTest } from "@/lib/provider-adapters";
+import { ThemeControl } from "@/components/ThemeControl";
 
 export function WorkspaceShell({ projectId, section, publicDemo = false }: { projectId: string; section: string; publicDemo?: boolean }) {
   const router = useRouter();
@@ -146,6 +147,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-stone-900">{project.spine.workloadCategory}</h2>
             </div>
             <div className="flex flex-wrap gap-3">
+              <ThemeControl />
               <button onClick={() => updateProject((current) => ({ ...current, name: current.name }))} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500">Preset: demo</button>
               <Link href="/settings/providers" className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500">Providers</Link>
               <button onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">Export blueprint</button>
@@ -312,6 +314,11 @@ function BuildKitPanel({ project, estimate }: { project: Project; estimate: Scen
 function SpinePanel({ project }: { project: Project }) {
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Workload spine</div>
+        <h3 className="mt-3 text-2xl font-semibold text-stone-900">The canonical decision record</h3>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-600">This deterministic classification explains the recommended controls and feeds every route, cost trace, scenario and Build Kit artifact. Editing the workflow recalculates economics without rewriting the original business constraints.</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Workload category" value={project.spine.workloadCategory} />
         <MetricCard label="Overall complexity" value={project.spine.overallComplexity} />
@@ -348,7 +355,7 @@ function WorkflowPanel({ project, onUpdate }: { project: Project; onUpdate: (pro
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Editable routing decomposition</div>
+        <div><div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Editable routing decomposition</div><p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">Each task shows what is deterministic, what needs a model, the selected execution method and its token allowance. Edits update all four policies and exported artifacts.</p></div>
         <button type="button" onClick={restoreRecommendation} className="rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">Restore BuildWise recommendation</button>
       </div>
       <div className="overflow-x-auto">
@@ -488,6 +495,11 @@ function ScenariosPanel({ project, selectedScenario, onSelect }: { project: Proj
 function PromptPanel({ project }: { project: Project }) {
   return (
     <div className="space-y-5">
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Prompt comparison</div>
+        <h3 className="mt-3 text-2xl font-semibold text-stone-900">Treat prompts as measurable task contracts.</h3>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-600">The comparison exposes instruction investment, context reduction, output limits and expected retry impact. These are design estimates until a controlled provider result is explicitly recorded.</p>
+      </div>
       {project.prompts.map((prompt) => (
         <div key={prompt.id} className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-4">
@@ -539,6 +551,7 @@ function TestPanel({ project, lastTest, publicDemo, onRun, onFeedback }: { proje
     <div className="space-y-6">
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">Controlled model test</div>
+        <p className="mb-5 max-w-3xl text-sm leading-6 text-stone-600">Run one explicit task to compare the design estimate with a labelled simulation, mock adapter response or provider-reported result. No test starts automatically.</p>
         <div className="grid gap-4 md:grid-cols-3">
           <label className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm"><span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">Workflow task</span><select value={selectedTaskId} onChange={(event) => setSelectedTaskId(event.target.value)} className="w-full bg-transparent font-medium text-stone-900">{project.tasks.map((task) => <option key={task.id} value={task.id}>{task.name}</option>)}</select></label>
           <InfoLine label="Estimated tokens" value={`${selectedTask.estimatedInputTokens.toLocaleString("en-US")} in / ${selectedTask.estimatedOutputTokens.toLocaleString("en-US")} out`} />

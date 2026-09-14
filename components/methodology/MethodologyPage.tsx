@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export function MethodologyPage() {
   return (
-    <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 px-6 py-8 text-stone-900">
+    <div className="bw-page min-h-[100dvh]">
+      <SiteHeader compact />
+      <main id="main-content" className="bg-stone-100 px-6 py-8 text-stone-900">
       <div className="mx-auto max-w-4xl space-y-8">
-        <header className="flex items-center justify-between border-b border-stone-300 pb-5">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">BuildWise</div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em]">Methodology</h1>
-          </div>
-          <Link href="/" className="text-sm text-stone-700 underline-offset-2 hover:underline">Back to home</Link>
+        <header className="border-b border-stone-300 pb-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Transparent calculations</div>
+          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em]">Methodology</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">Inspect how visible project inputs become deterministic classifications, task traces, economic policies and implementation artifacts.</p>
         </header>
 
         <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
@@ -43,6 +44,7 @@ export function MethodologyPage() {
           </p>
         </section>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

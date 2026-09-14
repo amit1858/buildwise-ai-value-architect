@@ -1,219 +1,234 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { buildDemoProject, exampleUseCases, formatMoney, type IntakeForm } from "@/lib/buildwise";
-import { createProjectFromInput, ensureSeedProject } from "@/lib/project-store";
+import { SiteHeader } from "@/components/SiteHeader";
+import { buildDemoProject, formatMoney } from "@/lib/buildwise";
+import { ensureSeedProject } from "@/lib/project-store";
+
+const journey = [
+  "Describe the enterprise problem",
+  "Assess AI suitability",
+  "Select Low-code, Pro-code or Hybrid",
+  "Decompose the workload",
+  "Route tasks and optimise prompts",
+  "Compare economics and governance",
+  "Validate through a controlled test",
+  "Export the implementation Build Kit",
+];
+
+const proofScreens = [
+  ["intake.png", "Intake", "Defines the business, volume, quality and governance constraints."],
+  ["build-path.png", "Build path", "Explains why Low-code, Pro-code or Hybrid owns each responsibility."],
+  ["workflow.png", "Workflow editor", "Makes deterministic tasks, model routes and review gates editable."],
+  ["scenarios.png", "Scenario economics", "Compares four policies using the same canonical workload."],
+  ["build-kit.png", "Build Kit", "Turns the selected operating plan into implementation artifacts."],
+  ["blueprint.png", "Blueprint", "Packages the auditable decision trail for engineering and governance."],
+];
 
 export function LandingPage() {
   const router = useRouter();
-  const demoProject = buildDemoProject();
-  const baseline = demoProject.scenarios.find((scenario) => scenario.id === "baseline");
-  const balanced = demoProject.scenarios.find((scenario) => scenario.id === "balanced");
-  const deterministicTasks = demoProject.tasks.filter((task) => !task.needsLLM).length;
-  const reviewTasks = demoProject.tasks.filter((task) => task.humanReviewPolicy !== "Never").length;
-
-  const loadExample = (input: IntakeForm) => {
-    const project = createProjectFromInput(input);
-    router.push(`/workspace/${project.id}/spine`);
-  };
-
-  const openExisting = () => {
-    const project = ensureSeedProject();
-    router.push(`/workspace/${project.id}/spine`);
-  };
+  const project = buildDemoProject();
+  const baseline = project.scenarios.find((scenario) => scenario.id === "baseline")!;
+  const balanced = project.scenarios.find((scenario) => scenario.id === "balanced")!;
+  const deterministicTasks = project.tasks.filter((task) => !task.needsLLM).length;
+  const budgetStatus = balanced.monthlyCost <= project.input.monthlyBudget ? "Within budget" : "Budget review";
+  const publicDemo = process.env.NEXT_PUBLIC_BUILDWISE_PUBLIC_DEMO === "true";
+  const standaloneUrl = process.env.NEXT_PUBLIC_BUILDWISE_STANDALONE_URL;
+  const openDemo = () => router.push(`/workspace/${ensureSeedProject().id}/spine`);
 
   return (
-    <main id="main-content" className="bw-page min-h-[100dvh] bg-stone-100 text-stone-900">
-      <div className="mx-auto max-w-[1360px] px-4 py-5 sm:px-6 lg:px-10">
-        <header className="landing-reveal flex min-h-16 items-center justify-between gap-4 border-b border-stone-300/80 pb-4">
-          <Link href="/" className="group flex items-center gap-3" aria-label="BuildWise home">
-            <div className="grid h-8 w-8 place-items-center rounded-[8px] border border-amber-700/30 bg-amber-100 text-xs font-semibold text-amber-950 transition group-hover:border-amber-800">
-              B
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-stone-900">BuildWise</div>
-              <div className="text-xs text-stone-600">AI Value Architect</div>
-            </div>
-          </Link>
-          <nav className="hidden items-center gap-5 text-sm text-stone-700 md:flex" aria-label="Primary">
-            <Link href="/methodology" className="font-medium hover:text-stone-900">Methodology</Link>
-            <Link href="/settings/providers" className="font-medium hover:text-stone-900">BYOK providers</Link>
-            <button onClick={openExisting} className="rounded-[8px] border border-stone-300 bg-white px-4 py-2 font-semibold text-stone-800 hover:border-amber-700">
-              Open workspace
-            </button>
-          </nav>
-        </header>
-
-        <section className="grid min-h-[calc(100dvh-6rem)] gap-10 py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-center lg:py-14">
-          <div className="landing-reveal" style={{ "--reveal-delay": "80ms" } as CSSProperties}>
-            <p className="bw-text-accent mb-4 max-w-[62ch] text-[11px] font-semibold uppercase tracking-[0.22em]">
-              Enterprise AI planning
+    <div className="bw-page landing-page">
+      <SiteHeader />
+      <main id="main-content">
+        <section className="landing-section hero-section">
+          <div className="hero-copy">
+            <p className="eyebrow">Enterprise AI cost intelligence</p>
+            <h1>Design AI systems for value, not token volume.</h1>
+            <p className="hero-lede">
+              BuildWise turns an enterprise AI idea into a cost-aware implementation blueprint - what should be deterministic, which model each task needs, how prompts and context should be designed, what the system will cost, and how it should be governed.
             </p>
-            <h1 className="max-w-[11ch] text-balance text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-stone-900 sm:text-6xl lg:text-7xl">
-              Design AI systems that can be defended.
-            </h1>
-            <p className="mt-6 max-w-[58ch] text-pretty text-lg leading-8 text-stone-700">
-              Classify tasks, route models, forecast cost, and export a Build Kit finance and engineering can inspect.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/new" className="bw-action-primary rounded-[8px] px-5 py-3 text-center text-sm font-semibold">
-                Start blank
-              </Link>
-              <button onClick={() => router.push("/workspace/demo-support-project/build-kit")} className="bw-action-secondary rounded-[8px] border px-5 py-3 text-sm font-semibold">
-                Inspect demo
-              </button>
+            <div className="hero-actions">
+              <button type="button" onClick={openDemo} className="bw-action-primary">Explore the live demo</button>
+              <Link href="/new" className="bw-action-secondary">Start a new blueprint</Link>
+            </div>
+            <div className="hero-links">
+              <a href="https://github.com/amit1858/buildwise-ai-value-architect">GitHub</a>
+              <Link href="/methodology">Methodology</Link>
+              <Link href="/workspace/demo-support-project/build-kit">View sample Build Kit</Link>
             </div>
           </div>
 
-          <div className="landing-reveal relative grid gap-4 lg:grid-cols-[0.72fr_1fr]" style={{ "--reveal-delay": "160ms" } as CSSProperties}>
-            <div className="space-y-4 lg:pt-14">
-              <MetricTile label="Monthly volume" value="100,000" detail="support interactions" />
-              <MetricTile label="Deterministic tasks" value={`${deterministicTasks}/${demoProject.tasks.length}`} detail="kept out of LLM billing" />
+          <aside className="economics-panel" aria-label="Demo economics">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">Seeded support workflow</span>
+                <h2>Design estimate</h2>
+              </div>
+              <span className="status-badge status-neutral">Demo</span>
             </div>
-            <div className="rounded-2xl border border-stone-300 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-sm font-semibold text-stone-900">Customer-support optimisation</div>
-                  <p className="mt-2 max-w-[46ch] text-sm leading-6 text-stone-600">
-                    A live demo project showing routing, budget policy, prompt contracts, and review gates.
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Demo</span>
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {[
-                  ["Intake", "Problem, users, volume, quality, and budget"],
-                  ["Decision spine", "Workload category, risk, and deterministic controls"],
-                  ["Routing", "Task-level execution method and model fallback"],
-                  ["Build Kit", "Exportable implementation artifacts"],
-                ].map(([label, detail], index) => (
-                  <div key={label} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 border-t border-stone-200 pt-3 first:border-t-0 first:pt-0">
-                    <div className="bw-text-accent font-mono text-sm tabular-nums">{String(index + 1).padStart(2, "0")}</div>
-                    <div>
-                      <div className="text-sm font-semibold text-stone-900">{label}</div>
-                      <div className="mt-1 text-sm leading-6 text-stone-600">{detail}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <CostTile label="Naive baseline" value={baseline?.monthlyCost === 0 ? "Unavailable" : formatMoney(baseline?.monthlyCost ?? 0)} />
-                <CostTile label="Balanced route" value={balanced?.monthlyCost === 0 ? "Unavailable" : formatMoney(balanced?.monthlyCost ?? 0)} accent />
-              </div>
+            <div className="economics-grid">
+              <Metric label="Monthly volume" value={project.input.executionsPerMonth.toLocaleString("en-US")} />
+              <Metric label="Deterministic tasks" value={`${deterministicTasks}/${project.tasks.length}`} />
+              <Metric label="Baseline estimate" value={formatMoney(baseline.monthlyCost)} />
+              <Metric label="Recommended policy" value={balanced.label} />
+              <Metric label="Projected cost" value={formatMoney(balanced.monthlyCost)} accent />
+              <Metric label="Estimated reduction" value={`${balanced.savingsVsBaseline.toFixed(1)}%`} accent />
             </div>
+            <div className="budget-line">
+              <span>Budget status</span>
+              <strong className={budgetStatus === "Within budget" ? "signal-success" : "signal-warning"}>{budgetStatus}</strong>
+            </div>
+            <details className="calculation-note">
+              <summary>How this is calculated</summary>
+              <p>Canonical task traces combine visible volume, token allowances, calls, retries, fallbacks and demo catalogue pricing. This is an estimate, not provider-reported usage.</p>
+            </details>
+          </aside>
+        </section>
+
+        <section className="landing-section problem-section" id="product">
+          <div className="section-intro">
+            <p className="eyebrow">The problem</p>
+            <h2>Token maxxing is a system-design failure.</h2>
+            <p>Model choice, prompt contracts, context size, retry behaviour and routing set the cost curve before the invoice arrives. Blunt caps reduce experimentation without repairing the architecture.</p>
+          </div>
+          <div className="comparison-table" aria-label="Reactive control compared with BuildWise">
+            <div className="comparison-row comparison-head"><span>Reactive control</span><span>BuildWise approach</span></div>
+            {[
+              ["Cap usage", "Design the right workload"],
+              ["Restrict prompts", "Optimise prompt contracts"],
+              ["Default to one model", "Route by task complexity"],
+              ["Review spend after use", "Forecast before implementation"],
+              ["Govern everything equally", "Apply risk-aware review gates"],
+            ].map(([left, right]) => <div className="comparison-row" key={left}><span>{left}</span><strong>{right}</strong></div>)}
           </div>
         </section>
 
-        <section className="landing-reveal grid gap-5 border-y border-stone-300/80 py-12 lg:grid-cols-[1fr_1.35fr]" style={{ "--reveal-delay": "220ms" } as CSSProperties}>
-          <div>
-            <h2 className="max-w-[13ch] text-balance text-3xl font-semibold leading-tight tracking-[-0.055em] text-stone-900 md:text-4xl">
-              The model is not the starting point.
-            </h2>
-            <p className="mt-5 max-w-[52ch] text-sm leading-7 text-stone-600">
-              Token maxxing is a system-design problem, not a billing surprise. Reactive usage caps arrive after architecture, routing, and prompt choices have already set the cost curve. BuildWise moves cost management into the design itself.
-            </p>
-            <p className="mt-4 max-w-[52ch] text-sm leading-7 text-stone-600">
-              It connects problem complexity to task decomposition, model selection, prompt design, token use, governance, and ROI, then carries the decision trail from the initial idea into an implementation-ready Build Kit.
-            </p>
-            <p className="bw-text-accent mt-4 max-w-[52ch] text-sm font-semibold leading-6">
-              Token optimization expands the Low-code, Pro-code, and Hybrid journey rather than replacing it.
-            </p>
+        <section className="landing-section mechanism-section">
+          <div className="section-intro">
+            <p className="eyebrow">Complete mechanism</p>
+            <h2>From enterprise idea to operating blueprint.</h2>
+            <p>Token optimisation is one layer of the BuildWise journey, not the product itself.</p>
           </div>
-          <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
-            <Principle title="Deterministic first" copy="Rules, retrieval, and schema checks sit before generation so routine work avoids model spend." />
-            <Principle title="Task-level routing" copy="Every task carries a provider, model, fallback, retry assumption, and human-review gate." />
-            <Principle title="Context budget" copy="Token estimates show instruction, retrieved context, variable input, output allowance, retries, and fallback." />
-            <Principle title="Implementation handoff" copy="The Build Kit exports prompts, routing, policies, evaluation plans, and low-code or pro-code guidance." />
-          </div>
+          <ol className="journey-grid">
+            {journey.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></li>)}
+          </ol>
         </section>
 
-        <section className="landing-reveal py-12" style={{ "--reveal-delay": "280ms" } as CSSProperties}>
-          <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-2xl border border-stone-300 bg-white p-6 shadow-sm">
-              <h2 className="max-w-[18ch] text-balance text-3xl font-semibold tracking-[-0.055em] text-stone-900">
-                One operating blueprint, three delivery paths.
-              </h2>
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                {demoProject.buildPaths?.map((path) => (
-                  <article key={path.id} className={path.id === demoProject.recommendedBuildPath ? "bw-surface-selected rounded-xl border p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
-                    <div className="bw-text-primary text-base font-semibold">{path.label}</div>
-                    <div className="bw-text-accent mt-2 font-mono text-2xl font-semibold tabular-nums">{path.fitScore}%</div>
-                    <p className="bw-text-secondary mt-3 text-sm leading-6">{path.summary}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className="bw-surface-inverse rounded-2xl border p-6 shadow-sm">
-              <div className="text-sm font-semibold text-amber-200">Governance posture</div>
-              <p className="mt-4 text-pretty text-2xl font-semibold leading-tight tracking-[-0.045em]">
-                {reviewTasks} review gates remain visible before any consequential answer is accepted.
-              </p>
-              <div className="bw-text-muted mt-6 space-y-3 text-sm leading-6">
-                <div>Provider credentials stay out of public-demo exports.</div>
-                <div>Provider-reported usage is separated from simulated demo evidence.</div>
-                <div>Fallback policy is explicit before production rollout.</div>
-              </div>
-            </div>
+        <section className="landing-section policy-section">
+          <div className="section-intro">
+            <p className="eyebrow">One workflow, four policies</p>
+            <h2>Choose the operating posture before implementation.</h2>
+            <p>Every policy exposes routing, context, retry, fallback, cache and review assumptions. Figures below use demo catalogue pricing.</p>
           </div>
-        </section>
-
-        <section className="landing-reveal pb-14" style={{ "--reveal-delay": "340ms" } as CSSProperties}>
-          <div className="mb-6 max-w-[64ch]">
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.055em] text-stone-900">
-              Start from a grounded scenario.
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              Each sample creates a project with workflow decomposition, scenario economics, prompts, and Build Kit exports.
-            </p>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_1fr]">
-            {exampleUseCases.map((example, index) => (
-              <button
-                key={example.projectName}
-                onClick={() => loadExample(example as IntakeForm)}
-                className={`rounded-2xl border border-stone-300 bg-white p-5 text-left shadow-sm hover:border-amber-700 ${index === 1 ? "lg:mt-10" : ""}`}
-              >
-                <div className="text-base font-semibold text-stone-900">{example.projectName}</div>
-                <p className="mt-3 text-sm leading-6 text-stone-600">{example.problemStatement}</p>
-                <div className="bw-text-accent mt-5 text-sm font-semibold">Open scenario</div>
-              </button>
+          <div className="policy-grid">
+            {project.scenarios.map((scenario) => (
+              <article key={scenario.id} className={scenario.id === "balanced" ? "policy-card selected-card" : "policy-card"}>
+                <div className="panel-heading"><h3>{scenario.label}</h3>{scenario.id === "balanced" && <span className="status-badge status-success">Recommended</span>}</div>
+                <strong className="policy-cost">{formatMoney(scenario.monthlyCost)}<small>/month</small></strong>
+                <p>{scenario.summary}</p>
+                <dl>
+                  <div><dt>Deterministic</dt><dd>{scenario.deterministicShare}%</dd></div>
+                  <div><dt>Premium model</dt><dd>{scenario.premiumModelShare}%</dd></div>
+                  <div><dt>Human review</dt><dd>{scenario.humanReviewRate}%</dd></div>
+                  <div><dt>Trade-off</dt><dd>{scenario.keyCompromises[0]}</dd></div>
+                </dl>
+              </article>
             ))}
           </div>
         </section>
-      </div>
-    </main>
-  );
-}
 
-function MetricTile({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="rounded-2xl border border-stone-300 bg-white p-5 shadow-sm">
-      <div className="text-sm font-medium text-stone-600">{label}</div>
-      <div className="mt-3 font-mono text-3xl font-semibold tabular-nums text-stone-900">{value}</div>
-      <div className="mt-1 text-sm text-stone-600">{detail}</div>
+        <section className="landing-section paths-section">
+          <div className="section-intro">
+            <p className="eyebrow">Three implementation paths</p>
+            <h2>Responsibility is a design decision.</h2>
+            <p>The seeded scenario recommends {project.buildPaths?.find((path) => path.id === project.recommendedBuildPath)?.label} because it needs governed model use without giving up deterministic workflow control.</p>
+          </div>
+          <div className="path-matrix">
+            <div className="path-row path-head"><span>Path</span><span>Fit</span><span>Best when</span><span>Responsibility boundary</span></div>
+            {project.buildPaths?.map((path) => (
+              <div className={path.id === project.recommendedBuildPath ? "path-row selected-row" : "path-row"} key={path.id}>
+                <strong>{path.label}</strong><span>{path.fitScore}%</span><span>{path.summary}</span><span>{path.tradeoffs[0]}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-section proof-section">
+          <div className="section-intro">
+            <p className="eyebrow">Product proof</p>
+            <h2>Every screen supports a decision.</h2>
+            <p>Current product views show the path from grounded intake to implementation handoff.</p>
+          </div>
+          <div className="proof-grid">
+            {proofScreens.map(([src, title, copy]) => (
+              <figure key={src}>
+                <img src={`./product-proof/${src}`} alt={`${title} screen in BuildWise`} />
+                <figcaption><strong>{title}</strong><span>{copy}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-section build-kit-section">
+          <div className="section-intro">
+            <p className="eyebrow">From estimate to implementation</p>
+            <h2>The Build Kit carries the decision into delivery.</h2>
+          </div>
+          <div className="artifact-layout">
+            <div className="artifact-list">
+              {["Routing matrix", "Optimised prompt pack", "Token and cost forecast", "Budget and fallback policy", "Evaluation plan", "Observability plan", "Human-review policy", "GitHub Copilot implementation prompt", "Low-code guide", "Pro-code guide", "Hybrid responsibility map"].map((item) => <span key={item}>{item}</span>)}
+            </div>
+            <div className="artifact-cta">
+              <p>Artifacts are generated from canonical project state, the selected scenario and the recommended build path.</p>
+              <Link href="/workspace/demo-support-project/build-kit" className="bw-action-primary">Inspect the seeded Build Kit</Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section trust-section">
+          <div className="section-intro">
+            <p className="eyebrow">Architecture and trust boundary</p>
+            <h2>Deterministic planning stays separate from provider execution.</h2>
+          </div>
+          <div className="trust-grid">
+            {[
+              ["Canonical project state", "One project model drives workflow, economics, Blueprint and Build Kit exports."],
+              ["Deterministic calculation engine", "Task traces and scenario totals are computed without a billed model call."],
+              ["Provider and model registry", "Catalogue models, custom identifiers and Azure deployment names remain distinct."],
+              ["Server-side adapters", "Provider requests exist only in the server-capable deployment."],
+              ["Explicit provenance", "Simulation, mock adapter and live provider results are labelled separately."],
+              ["Credential boundary", "Keys remain session-only and never enter public exports."],
+            ].map(([title, copy]) => <article key={title}><h3>{title}</h3><p>{copy}</p></article>)}
+          </div>
+          <div className="capability-boundary">
+            <div>
+              <span className="status-badge status-success">Public interactive demo</span>
+              <p>Runs entirely as a credential-free simulation. No provider key is accepted or transmitted.</p>
+            </div>
+            <div>
+              <span className="status-badge status-neutral">Protected standalone</span>
+              <p>Configure a provider in a protected, server-hosted session to validate one controlled request.</p>
+              {standaloneUrl && !publicDemo && <a href={standaloneUrl}>Open server-capable BuildWise</a>}
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section final-cta">
+          <p className="eyebrow">Implementation starts with architecture</p>
+          <h2>Build the AI operating plan before paying to run it.</h2>
+          <div className="hero-actions">
+            <button type="button" onClick={openDemo} className="bw-action-primary">Explore the demo</button>
+            <Link href="/new" className="bw-action-secondary">Start a blueprint</Link>
+            <a href="https://github.com/amit1858/buildwise-ai-value-architect" className="text-link">View GitHub</a>
+            <Link href="/methodology" className="text-link">Read the methodology</Link>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
 
-function CostTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className={accent ? "bw-surface-selected rounded-xl border p-4" : "rounded-xl border border-stone-200 bg-stone-50 p-4"}>
-      <div className="bw-text-secondary text-sm font-medium">{label}</div>
-      <div className="bw-text-primary mt-2 font-mono text-xl font-semibold tabular-nums">{value}</div>
-      <div className="bw-text-secondary mt-1 text-xs">Demo catalogue pricing</div>
-    </div>
-  );
-}
-
-function Principle({ title, copy }: { title: string; copy: string }) {
-  return (
-    <article className="border-t border-stone-300 pt-4">
-      <h3 className="text-lg font-semibold text-stone-900">{title}</h3>
-      <p className="mt-2 max-w-[58ch] text-sm leading-6 text-stone-600">{copy}</p>
-    </article>
-  );
+function Metric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return <div className={accent ? "metric metric-accent" : "metric"}><span>{label}</span><strong>{value}</strong></div>;
 }

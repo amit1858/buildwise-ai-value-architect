@@ -118,8 +118,8 @@ test.describe("BuildWise visual accessibility", () => {
         };
       });
       const expectedTokens = expected === "dark"
-        ? { pageBg: "#17130f", pageFg: "#f4ede3", surface: "#211b16", surfaceFg: "#f4ede3" }
-        : { pageBg: "#f6f1e8", pageFg: "#2a241f", surface: "#fffaf2", surfaceFg: "#2a241f" };
+        ? { pageBg: "#080b0f", pageFg: "#f4f7f5", surface: "#0f151b", surfaceFg: "#f4f7f5" }
+        : { pageBg: "#f5f7f4", pageFg: "#101612", surface: "#fff", surfaceFg: "#101612" };
       expect(tokens).toEqual(expectedTokens);
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator("html")).toHaveAttribute("data-theme", expected);
@@ -128,13 +128,13 @@ test.describe("BuildWise visual accessibility", () => {
 
   test("reported contrast regressions and focus treatment remain corrected", async ({ page }) => {
     await openWithTheme(page, "/", "dark", "light");
-    await expect(page.getByRole("link", { name: "Start blank" })).toBeVisible();
-    await expect(page.getByText("Balanced route", { exact: true })).toBeVisible();
-    await expect(page.getByText("Governance posture", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Start blueprint" })).toBeVisible();
+    await expect(page.getByText("Recommended policy", { exact: true })).toBeVisible();
+    await expect(page.getByText("Architecture and trust boundary", { exact: true })).toBeVisible();
     await expectNoSeriousAccessibilityViolations(page);
 
-    await page.getByRole("link", { name: "Start blank" }).focus();
-    const focus = await page.getByRole("link", { name: "Start blank" }).evaluate((element) => {
+    await page.getByRole("link", { name: "Start blueprint" }).focus();
+    const focus = await page.getByRole("link", { name: "Start blueprint" }).evaluate((element) => {
       const style = getComputedStyle(element);
       return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
     });
@@ -182,6 +182,43 @@ test.describe("BuildWise visual accessibility", () => {
     const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(mobileOverflow, "populated results overflowed at 390x844").toBeLessThanOrEqual(1);
     expect(consoleErrors).toEqual([]);
+  });
+
+  test("desktop header keeps theme control separate from workspace action", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openWithTheme(page, "/", "dark", "dark");
+    const themeBox = await page.locator(".site-actions select").boundingBox();
+    const workspaceBox = await page.getByRole("button", { name: "Open workspace" }).boundingBox();
+    expect(themeBox).not.toBeNull();
+    expect(workspaceBox).not.toBeNull();
+    const overlaps = !(
+      themeBox!.x + themeBox!.width <= workspaceBox!.x ||
+      workspaceBox!.x + workspaceBox!.width <= themeBox!.x ||
+      themeBox!.y + themeBox!.height <= workspaceBox!.y ||
+      workspaceBox!.y + workspaceBox!.height <= themeBox!.y
+    );
+    expect(overlaps).toBe(false);
+  });
+
+  test("dark navigation text meets contrast requirements", async ({ page }) => {
+    await openWithTheme(page, "/", "dark", "dark");
+    const ratios = await page.locator(".site-nav a").evaluateAll((links) => {
+      const luminance = (value: string) => {
+        const channels = value.match(/\d+/g)!.slice(0, 3).map(Number).map((channel) => {
+          const normalized = channel / 255;
+          return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+      };
+      return links.map((link) => {
+        const style = getComputedStyle(link);
+        const parentStyle = getComputedStyle(link.closest(".site-header")!);
+        const foreground = luminance(style.color);
+        const background = luminance(parentStyle.backgroundColor);
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+      });
+    });
+    expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5);
   });
 
   test("representative routes remain usable at required responsive viewports", async ({ page }) => {

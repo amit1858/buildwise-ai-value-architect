@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { modelCatalogue, type OperatingMode, type ProviderConfig, redactSecrets } from "@/lib/buildwise";
 import { NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
+import { SiteHeader } from "@/components/SiteHeader";
 import {
   clearCustomModelIdentifier,
   CUSTOM_MODEL_VALUE,
@@ -187,14 +188,16 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
   const connectedCount = providers.filter((provider) => provider.status === "Connected" && provider.isEnabledForSession).length;
 
   return (
-    <main id="main-content" className="bw-page min-h-[100dvh] px-6 py-8 text-stone-900">
+    <div className="bw-page min-h-[100dvh]">
+      <SiteHeader compact />
+      <main id="main-content" className="px-6 py-8 text-stone-900">
       <div className="mx-auto max-w-6xl space-y-8">
-        <header className="flex items-center justify-between border-b border-stone-300 pb-5">
+        <header className="border-b border-stone-300 pb-5">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">BuildWise</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">Session-only provider boundary</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em]">Provider settings</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">Explore the model catalogue in every deployment. Credential entry and controlled live validation are available only in the protected server-capable application.</p>
           </div>
-          <Link href="/" className="text-sm text-stone-700 underline-offset-2 hover:underline">Back to home</Link>
         </header>
 
         <div className="bw-panel rounded-2xl p-5 shadow-sm">
@@ -353,7 +356,8 @@ export function ProviderSettings({ publicDemo = false }: { publicDemo?: boolean 
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
 

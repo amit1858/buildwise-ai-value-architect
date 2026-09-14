@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeControl } from "@/components/ThemeControl";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,7 +49,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: `(() => { const p = localStorage.getItem('buildwise-theme') || 'system'; const d = p === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; document.documentElement.dataset.theme = d; document.documentElement.style.colorScheme = d; })()` }} />
         <a className="skip-link" href="#main-content">Skip to content</a>
-        <div className="global-theme-control"><ThemeControl /></div>
         {children}
       </body>
     </html>
