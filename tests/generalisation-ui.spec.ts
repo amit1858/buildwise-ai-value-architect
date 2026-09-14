@@ -1,4 +1,6 @@
 import { expect, test, type Download, type Page } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 test.setTimeout(120_000);
 
@@ -127,6 +129,14 @@ const scenarios: Scenario[] = [
 
 const workspaceSections = ["AI suitability", "Build path", "Workflow", "Scenarios", "Prompts", "Controlled test", "Build kit", "Blueprint"] as const;
 const supportOnlyPhrases = ["Customer-support operations", "Support agents", "billing mismatch", "Contact routing", "Policy evidence retrieval"];
+const evidenceRoot = process.env.BUILDWISE_EVIDENCE_DIR;
+
+function evidencePath(scenarioName: string, fileName: string) {
+  if (!evidenceRoot) return null;
+  const directory = path.join(evidenceRoot, "scenarios", scenarioName.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+  mkdirSync(directory, { recursive: true });
+  return path.join(directory, fileName);
+}
 
 async function expectValues(page: Page, values: Record<string, string>) {
   for (const [label, value] of Object.entries(values)) await expect(page.getByLabel(label)).toHaveValue(value);
@@ -325,6 +335,7 @@ for (const scenario of scenarios) {
     await expectExplicitButtonTypes(page);
     await page.getByRole("link", { name: "Scenarios" }).click();
     await expect(page.getByTestId("scenario-cost-balanced")).not.toHaveText(beforeCost);
+    const afterCost = await page.getByTestId("scenario-cost-balanced").innerText();
     await expectExplicitButtonTypes(page);
 
     await page.getByRole("link", { name: "Prompts" }).click();
@@ -345,14 +356,16 @@ for (const scenario of scenarios) {
     await expectExplicitButtonTypes(page);
     const buildKitDownloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download complete Build Kit" }).click();
-    const buildKit = await readDownload(await buildKitDownloadPromise);
+    const buildKitDownload = await buildKitDownloadPromise;
+    const buildKit = await readDownload(buildKitDownload);
     expect(buildKit).toContain(scenario.name);
 
     await page.getByRole("link", { name: "Blueprint" }).click();
     await expectExplicitButtonTypes(page);
     const blueprintDownloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export JSON" }).click();
-    const blueprint = await readDownload(await blueprintDownloadPromise);
+    const blueprintDownload = await blueprintDownloadPromise;
+    const blueprint = await readDownload(blueprintDownload);
     expect(blueprint).toContain(scenario.name);
     expect(blueprint).toContain(scenario.problem);
 
@@ -370,6 +383,31 @@ for (const scenario of scenarios) {
     for (const section of workspaceSections) await expect(page.getByRole("link", { name: section })).toBeVisible();
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
+
+    const buildKitFile = evidencePath(scenario.name, "build-kit.md");
+    const blueprintFile = evidencePath(scenario.name, "blueprint.json");
+    const journeyFile = evidencePath(scenario.name, "journey.json");
+    const screenshotFile = evidencePath(scenario.name, "blueprint.png");
+    if (buildKitFile && blueprintFile && journeyFile && screenshotFile) {
+      writeFileSync(buildKitFile, buildKit, "utf8");
+      writeFileSync(blueprintFile, blueprint, "utf8");
+      writeFileSync(journeyFile, JSON.stringify({
+        scenario,
+        refreshEvidence: {
+          stepsRefreshed: 4,
+          exactValuesVerified: true,
+          backContinueVerified: true,
+          generatedRefreshVerified: true,
+        },
+        workspaceSections,
+        economics: { balancedBefore: beforeCost, balancedAfter: afterCost, recalculated: beforeCost !== afterCost },
+        controlledTest: { provenance: "demo-simulation", providerRequests: [] },
+        exports: { buildKit: path.basename(buildKitFile), blueprint: path.basename(blueprintFile), contaminationScan: "passed" },
+        consoleErrors,
+        pageErrors,
+      }, null, 2), "utf8");
+      await page.screenshot({ path: screenshotFile, fullPage: true });
+    }
   });
 }
 

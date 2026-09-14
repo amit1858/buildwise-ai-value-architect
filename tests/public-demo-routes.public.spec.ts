@@ -1,6 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 test.setTimeout(90_000);
+const evidenceRoot = process.env.BUILDWISE_EVIDENCE_DIR;
+
+function savePublicEvidence(fileName: string, value: unknown) {
+  if (!evidenceRoot) return;
+  const directory = path.join(evidenceRoot, "public-static");
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(path.join(directory, fileName), typeof value === "string" ? value : JSON.stringify(value, null, 2), "utf8");
+}
 
 test("PUBLIC_DEMO supports browser-local local routes without API or provider traffic", async ({ page }) => {
   const requests: string[] = [];
@@ -32,6 +42,15 @@ test("PUBLIC_DEMO supports browser-local local routes without API or provider tr
   expect(requests.slice(beforeSimulation).filter((url) => /\/api\/|openai|anthropic|nvidia\.com/i.test(url))).toEqual([]);
   await expect(page.getByRole("button", { name: "Live provider test" })).toBeDisabled();
   await expect(page.getByRole("link", { name: "Providers" })).toHaveCount(0);
+  savePublicEvidence("local-blueprint-network.json", {
+    localUrl,
+    refreshed: true,
+    requests,
+    providerOrApiRequestsAfterSimulation: requests.slice(beforeSimulation).filter((url) => /\/api\/|openai|anthropic|nvidia\.com/i.test(url)),
+    liveProviderBlocked: true,
+    byokNavigationBlocked: true,
+  });
+  if (evidenceRoot) await page.screenshot({ path: path.join(evidenceRoot, "public-static", "local-blueprint.png"), fullPage: true });
 });
 
 test("PUBLIC_DEMO direct and refreshed demo/local section routes remain available", async ({ page }) => {
@@ -46,4 +65,10 @@ test("PUBLIC_DEMO direct and refreshed demo/local section routes remain availabl
   await expect(page.getByText("Customer-support operations", { exact: true }).first()).toBeVisible();
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.getByText("Seeded demo")).toBeVisible();
+  savePublicEvidence("route-refresh.json", {
+    demoLocalBuildPath: true,
+    directDemoSpine: true,
+    refreshedDemoSpine: true,
+    basePath: "/buildwise-ai-value-architect",
+  });
 });
