@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { buildDemoProject, formatMoney } from "@/lib/buildwise";
-import { ensureSeedProject } from "@/lib/project-store";
+import { createBlankProjectState, createDemoProjectState, getLatestDraft, migrateLegacyBrowserState, type ProjectState } from "@/lib/project-state";
+import { workspaceHref } from "@/lib/navigation";
 
 const journey = [
   "Describe the enterprise problem",
@@ -35,7 +37,13 @@ export function LandingPage() {
   const budgetStatus = balanced.monthlyCost <= project.input.monthlyBudget ? "Within budget" : "Budget review";
   const publicDemo = process.env.NEXT_PUBLIC_BUILDWISE_PUBLIC_DEMO === "true";
   const standaloneUrl = process.env.NEXT_PUBLIC_BUILDWISE_STANDALONE_URL;
-  const openDemo = () => router.push(`/workspace/${ensureSeedProject().id}/spine`);
+  const [draft, setDraft] = useState<ProjectState | null>(null);
+  useEffect(() => { migrateLegacyBrowserState(); queueMicrotask(() => setDraft(getLatestDraft())); }, []);
+  const openDemo = () => router.push(workspaceHref(createDemoProjectState().projectId, "spine"));
+  const startBlank = () => {
+    const state = createBlankProjectState();
+    router.push(`/new?project=${encodeURIComponent(state.projectId)}`);
+  };
 
   return (
     <div className="bw-page landing-page">
@@ -49,13 +57,14 @@ export function LandingPage() {
               BuildWise turns an enterprise AI idea into a cost-aware implementation blueprint - what should be deterministic, which model each task needs, how prompts and context should be designed, what the system will cost, and how it should be governed.
             </p>
             <div className="hero-actions">
-              <button type="button" onClick={openDemo} className="bw-action-primary">Explore the live demo</button>
-              <Link href="/new" className="bw-action-secondary">Start a new blueprint</Link>
+              <button type="button" onClick={startBlank} className="bw-action-primary">Start new blueprint</button>
+              {draft && <button type="button" onClick={() => router.push(`/new?project=${encodeURIComponent(draft.projectId)}`)} className="bw-action-secondary">Continue {draft.intake.projectName || "saved draft"} · {new Date(draft.updatedAt).toLocaleString()}</button>}
+              <button type="button" onClick={openDemo} className="bw-action-secondary">Explore customer-support demo</button>
             </div>
             <div className="hero-links">
               <a href="https://github.com/amit1858/buildwise-ai-value-architect">GitHub</a>
               <Link href="/methodology">Methodology</Link>
-              <Link href="/workspace/demo-support-project/build-kit">View sample Build Kit</Link>
+              <Link href={workspaceHref("demo-support-project", "build-kit")}>View sample Build Kit</Link>
             </div>
           </div>
 
@@ -181,7 +190,7 @@ export function LandingPage() {
             </div>
             <div className="artifact-cta">
               <p>Artifacts are generated from canonical project state, the selected scenario and the recommended build path.</p>
-              <Link href="/workspace/demo-support-project/build-kit" className="bw-action-primary">Inspect the seeded Build Kit</Link>
+              <Link href={workspaceHref("demo-support-project", "build-kit")} className="bw-action-primary">Inspect the seeded Build Kit</Link>
             </div>
           </div>
         </section>
@@ -219,7 +228,7 @@ export function LandingPage() {
           <h2>Build the AI operating plan before paying to run it.</h2>
           <div className="hero-actions">
             <button type="button" onClick={openDemo} className="bw-action-primary">Explore the demo</button>
-            <Link href="/new" className="bw-action-secondary">Start a blueprint</Link>
+            <button type="button" onClick={startBlank} className="bw-action-secondary">Start a blueprint</button>
             <a href="https://github.com/amit1858/buildwise-ai-value-architect" className="text-link">View GitHub</a>
             <Link href="/methodology" className="text-link">Read the methodology</Link>
           </div>

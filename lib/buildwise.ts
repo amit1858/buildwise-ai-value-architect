@@ -3,7 +3,10 @@ import { NVIDIA_BUILD_DEFAULT_MODEL } from "@/lib/model-registry";
 
 export type QualitySensitivity = "standard" | "high" | "critical";
 export type WorkloadMode = "batch" | "real-time" | "mixed";
+export type WorkloadUnit = "tokens" | "words" | "pages" | "characters";
 export type BuilderPreference = "pro-code" | "low-code" | "architecture";
+export type ProjectKind = "blank" | "draft" | "demo" | "generated" | "imported";
+export type SuitabilityClass = "generative-ai" | "selected-stages" | "deterministic" | "not-ready";
 export type BuildPathId = "low-code" | "pro-code" | "hybrid";
 export type ScenarioId = "baseline" | "economy" | "balanced" | "assurance";
 export type ProviderKind =
@@ -38,14 +41,27 @@ export const intakeSchema = z.object({
   processCost: z.coerce.number().min(0).default(0),
   expectedValue: z.coerce.number().min(0).default(0),
   executionsPerMonth: z.coerce.number().min(1).default(1000),
-  typicalInputSize: z.string().default("2-5 pages"),
-  typicalOutputSize: z.string().default("200-600 words"),
+  typicalInputValue: z.coerce.number().min(0).default(0),
+  typicalInputUnit: z.enum(["tokens", "words", "pages", "characters"]).default("words"),
+  highInputValue: z.coerce.number().min(0).default(0),
+  highInputUnit: z.enum(["tokens", "words", "pages", "characters"]).default("words"),
+  typicalOutputValue: z.coerce.number().min(0).default(0),
+  typicalOutputUnit: z.enum(["tokens", "words", "pages", "characters"]).default("words"),
+  typicalInputSize: z.string().default(""),
+  typicalOutputSize: z.string().default(""),
   attachedDocuments: z.coerce.number().min(0).default(2),
+  averageAttachmentPages: z.coerce.number().min(0).default(0),
+  averageConversationTurns: z.coerce.number().min(0).default(0),
+  retrievedPassages: z.coerce.number().min(0).default(0),
+  tokensPerPassage: z.coerce.number().min(0).default(0),
+  cachedContextPercent: z.coerce.number().min(0).max(100).default(0),
+  peakVolumeMultiplier: z.coerce.number().min(1).default(1),
   conversationHistory: z.boolean().default(false),
   peakConcurrency: z.coerce.number().min(1).default(10),
   workloadMode: z.enum(["batch", "real-time", "mixed"]).default("mixed"),
   qualitySensitivity: z.enum(["standard", "high", "critical"]).default("high"),
   latencyTarget: z.string().default("< 3 seconds"),
+  targetResponseSeconds: z.coerce.number().min(0).default(0),
   monthlyBudget: z.coerce.number().min(0).default(5000),
   dataSensitivity: z.string().default("internal"),
   dataResidency: z.boolean().default(false),
@@ -370,6 +386,9 @@ export interface Project {
   calibration: CalibrationState;
   buildPaths?: BuildPathRecommendation[];
   recommendedBuildPath?: BuildPathId;
+  kind?: ProjectKind;
+  schemaVersion?: number;
+  suitability?: { classification: SuitabilityClass; label: string; rationale: string[] };
 }
 
 export const exampleUseCases: IntakeForm[] = [
@@ -384,14 +403,27 @@ export const exampleUseCases: IntakeForm[] = [
     processCost: 280000,
     expectedValue: 640000,
     executionsPerMonth: 100000,
+    typicalInputValue: 900,
+    typicalInputUnit: "words",
+    highInputValue: 2200,
+    highInputUnit: "words",
+    typicalOutputValue: 250,
+    typicalOutputUnit: "words",
     typicalInputSize: "2-8 pages of customer and policy context",
     typicalOutputSize: "150-350 words",
     attachedDocuments: 3,
+    averageAttachmentPages: 4,
+    averageConversationTurns: 6,
+    retrievedPassages: 5,
+    tokensPerPassage: 260,
+    cachedContextPercent: 30,
+    peakVolumeMultiplier: 1.8,
     conversationHistory: true,
     peakConcurrency: 35,
     workloadMode: "mixed" as const,
     qualitySensitivity: "high" as const,
     latencyTarget: "under 4 seconds",
+    targetResponseSeconds: 4,
     monthlyBudget: 12000,
     dataSensitivity: "internal",
     dataResidency: false,
@@ -417,14 +449,27 @@ export const exampleUseCases: IntakeForm[] = [
     processCost: 175000,
     expectedValue: 420000,
     executionsPerMonth: 24000,
+    typicalInputValue: 6000,
+    typicalInputUnit: "tokens",
+    highInputValue: 24000,
+    highInputUnit: "tokens",
+    typicalOutputValue: 850,
+    typicalOutputUnit: "words",
     typicalInputSize: "1-3 documents and CRM notes",
     typicalOutputSize: "600-1100 words",
     attachedDocuments: 5,
+    averageAttachmentPages: 8,
+    averageConversationTurns: 0,
+    retrievedPassages: 12,
+    tokensPerPassage: 420,
+    cachedContextPercent: 20,
+    peakVolumeMultiplier: 1.4,
     conversationHistory: false,
     peakConcurrency: 12,
     workloadMode: "batch" as const,
     qualitySensitivity: "high" as const,
     latencyTarget: "under 20 seconds",
+    targetResponseSeconds: 20,
     monthlyBudget: 9000,
     dataSensitivity: "confidential",
     dataResidency: true,
@@ -450,14 +495,27 @@ export const exampleUseCases: IntakeForm[] = [
     processCost: 220000,
     expectedValue: 580000,
     executionsPerMonth: 18000,
+    typicalInputValue: 25,
+    typicalInputUnit: "pages",
+    highInputValue: 60,
+    highInputUnit: "pages",
+    typicalOutputValue: 2,
+    typicalOutputUnit: "pages",
     typicalInputSize: "10-40 pages of legal text",
     typicalOutputSize: "1-3 page summary with exceptions",
     attachedDocuments: 6,
+    averageAttachmentPages: 25,
+    averageConversationTurns: 0,
+    retrievedPassages: 8,
+    tokensPerPassage: 400,
+    cachedContextPercent: 15,
+    peakVolumeMultiplier: 1.3,
     conversationHistory: false,
     peakConcurrency: 8,
     workloadMode: "batch" as const,
     qualitySensitivity: "critical" as const,
     latencyTarget: "under 30 seconds",
+    targetResponseSeconds: 30,
     monthlyBudget: 15000,
     dataSensitivity: "regulated",
     dataResidency: true,
@@ -475,6 +533,57 @@ export const exampleUseCases: IntakeForm[] = [
 ];
 
 export function getDefaultProjectInput(): IntakeForm {
+  return getBlankProjectInput();
+}
+
+export function getBlankProjectInput(): IntakeForm {
+  return {
+    projectName: "",
+    problemStatement: "",
+    targetUsers: "",
+    businessOutcome: "",
+    industry: "",
+    currentProcess: "",
+    processCost: 0,
+    expectedValue: 0,
+    executionsPerMonth: 0,
+    typicalInputValue: 0,
+    typicalInputUnit: "words",
+    highInputValue: 0,
+    highInputUnit: "words",
+    typicalOutputValue: 0,
+    typicalOutputUnit: "words",
+    typicalInputSize: "",
+    typicalOutputSize: "",
+    attachedDocuments: 0,
+    averageAttachmentPages: 0,
+    averageConversationTurns: 0,
+    retrievedPassages: 0,
+    tokensPerPassage: 0,
+    cachedContextPercent: 0,
+    peakVolumeMultiplier: 1,
+    conversationHistory: false,
+    peakConcurrency: 1,
+    workloadMode: "mixed",
+    qualitySensitivity: "standard",
+    latencyTarget: "",
+    targetResponseSeconds: 0,
+    monthlyBudget: 0,
+    dataSensitivity: "internal",
+    dataResidency: false,
+    humanReview: false,
+    externalProviders: false,
+    localModels: false,
+    approvedProviders: [],
+    structuredOutput: false,
+    citations: false,
+    builderPreference: "architecture",
+    sampleInput: "",
+    confidentialWarning: true,
+  };
+}
+
+export function getDemoProjectInput(): IntakeForm {
   return {
     projectName: "Enterprise customer-support optimisation",
     problemStatement:
@@ -486,14 +595,27 @@ export function getDefaultProjectInput(): IntakeForm {
     processCost: 280000,
     expectedValue: 640000,
     executionsPerMonth: 100000,
+    typicalInputValue: 900,
+    typicalInputUnit: "words",
+    highInputValue: 2200,
+    highInputUnit: "words",
+    typicalOutputValue: 250,
+    typicalOutputUnit: "words",
     typicalInputSize: "2-8 pages of customer and policy context",
     typicalOutputSize: "150-350 words",
     attachedDocuments: 3,
+    averageAttachmentPages: 4,
+    averageConversationTurns: 6,
+    retrievedPassages: 5,
+    tokensPerPassage: 260,
+    cachedContextPercent: 30,
+    peakVolumeMultiplier: 1.8,
     conversationHistory: true,
     peakConcurrency: 35,
     workloadMode: "mixed",
     qualitySensitivity: "high",
     latencyTarget: "under 4 seconds",
+    targetResponseSeconds: 4,
     monthlyBudget: 12000,
     dataSensitivity: "internal",
     dataResidency: false,
@@ -656,6 +778,35 @@ export function getModelById(modelId: string): ModelProfile | undefined {
   return modelCatalogue.find((model) => model.modelId === modelId);
 }
 
+export function getRoutingPatchForModel(task: WorkflowTask, modelId: string): Partial<WorkflowTask> {
+  const deterministic = modelId === "Deterministic retrieval" || modelId === "Deterministic execution";
+  if (deterministic) {
+    return {
+      needsLLM: false,
+      primaryProvider: "deterministic",
+      primaryModel: modelId,
+      fallbackProvider: "deterministic",
+      fallbackModel: "Human review",
+      expectedCallsPerExecution: 0,
+      expectedRetryRate: 0,
+      recommendedExecutionMethod: modelId === "Deterministic retrieval"
+        ? "Deterministic retrieval with explicit evidence rules — no model call"
+        : "Deterministic rules or calculation — no model call",
+    };
+  }
+  const model = getModelById(modelId);
+  if (!model) return {};
+  return {
+    needsLLM: true,
+    primaryProvider: model.provider,
+    primaryModel: model.modelId,
+    expectedCallsPerExecution: Math.max(1, task.expectedCallsPerExecution),
+    recommendedExecutionMethod: task.needsLLM
+      ? task.recommendedExecutionMethod
+      : "Selective model assistance with schema validation",
+  };
+}
+
 export function calculateScenarioCost(
   modelId: string,
   uncachedInputTokens: number,
@@ -733,73 +884,54 @@ function getTaskPricing(task: WorkflowTask) {
 }
 
 function getScenarioTaskPolicy(task: WorkflowTask, scenarioId: ScenarioId): WorkflowTask {
+  const deterministic = !task.needsLLM;
+  const calls = (factor: number) => deterministic ? 0 : Math.max(0, Number((task.expectedCallsPerExecution * factor).toFixed(3)));
+  const retries = (factor: number) => deterministic ? 0 : Math.min(1, Number((task.expectedRetryRate * factor).toFixed(4)));
   if (scenarioId === "baseline") {
     return {
       ...task,
-      needsLLM: true,
-      primaryProvider: "openai",
-      primaryModel: "gpt-4.1",
-      fallbackProvider: "openai",
-      fallbackModel: "gpt-4.1-mini",
+      primaryModel: deterministic ? "Deterministic execution" : task.primaryModel,
       estimatedInputTokens: Math.round(task.estimatedInputTokens * 1.8),
       estimatedOutputTokens: Math.round(task.estimatedOutputTokens * 1.4),
-      expectedCallsPerExecution: 1,
-      expectedRetryRate: 0.08,
-      cacheEligible: true,
-      cacheHitRate: 0.1,
-      recommendedExecutionMethod: "Single advanced model with broad context and minimal filtering",
+      expectedCallsPerExecution: calls(1.15),
+      expectedRetryRate: retries(1.25),
+      cacheHitRate: task.cacheEligible ? Math.min(task.cacheHitRate, 0.1) : 0,
+      recommendedExecutionMethod: deterministic ? task.recommendedExecutionMethod : "Edited primary route with broad baseline context",
     };
   }
   if (scenarioId === "economy") {
-    const deterministic = task.id === "triage" || task.id === "policy" || task.id === "validate";
     return {
       ...task,
-      needsLLM: !deterministic,
-      primaryProvider: deterministic ? "deterministic" : "openai",
-      primaryModel: deterministic ? "Deterministic execution" : "gpt-4o-mini",
-      fallbackProvider: deterministic ? "deterministic" : "openai",
-      fallbackModel: deterministic ? "Human review" : "gpt-4o-mini",
+      primaryModel: deterministic ? "Deterministic execution" : task.primaryModel,
       estimatedInputTokens: Math.round(task.estimatedInputTokens * 0.7),
       estimatedOutputTokens: Math.round(task.estimatedOutputTokens * 0.65),
-      expectedCallsPerExecution: deterministic ? 0 : 1,
-      expectedRetryRate: deterministic ? 0 : 0.03,
-      cacheEligible: true,
-      cacheHitRate: 0.65,
-      recommendedExecutionMethod: deterministic ? "Deterministic rules and retrieval" : "Small model with strict context and output caps",
+      expectedCallsPerExecution: calls(0.85),
+      expectedRetryRate: retries(0.75),
+      cacheHitRate: task.cacheEligible ? Math.max(task.cacheHitRate, 0.65) : 0,
+      recommendedExecutionMethod: deterministic ? "Deterministic rules and retrieval" : "Small-context execution using the edited model route",
     };
   }
   if (scenarioId === "assurance") {
     return {
       ...task,
-      needsLLM: task.id !== "policy",
-      primaryProvider: task.id === "policy" ? "deterministic" : "azure-openai",
-      primaryModel: task.id === "policy" ? "Deterministic execution" : task.id === "draft" || task.id === "validate" ? "gpt-4.1" : "gpt-4.1-mini",
-      fallbackProvider: task.id === "policy" ? "deterministic" : "azure-openai",
-      fallbackModel: task.id === "policy" ? "Human review" : "gpt-4.1",
+      primaryModel: deterministic ? "Deterministic execution" : task.primaryModel,
       estimatedInputTokens: Math.round(task.estimatedInputTokens * 1.35),
       estimatedOutputTokens: Math.round(task.estimatedOutputTokens * 1.2),
-      expectedCallsPerExecution: task.id === "validate" ? 2 : task.id === "policy" ? 0 : 1,
-      expectedRetryRate: 0.1,
-      cacheEligible: true,
-      cacheHitRate: 0.25,
-      recommendedExecutionMethod: task.id === "policy" ? "Deterministic retrieval with evidence gate" : "High-assurance model with validation and human escalation",
+      expectedCallsPerExecution: calls(task.taskType === "Validation" ? 1.35 : 1.15),
+      expectedRetryRate: retries(1.5),
+      cacheHitRate: task.cacheEligible ? Math.min(task.cacheHitRate, 0.25) : 0,
+      recommendedExecutionMethod: deterministic ? "Deterministic execution with evidence gate" : "Edited model route with assurance validation and human escalation",
     };
   }
-  const deterministic = task.id === "triage" || task.id === "policy";
   return {
     ...task,
-    needsLLM: !deterministic,
-    primaryProvider: deterministic ? "deterministic" : "azure-openai",
-    primaryModel: deterministic ? "Deterministic execution" : task.id === "draft" ? "gpt-4.1-mini" : "gpt-4o-mini",
-    fallbackProvider: deterministic ? "deterministic" : "openai",
-    fallbackModel: deterministic ? "Human review" : "gpt-4o-mini",
+    primaryModel: deterministic ? "Deterministic execution" : task.primaryModel,
     estimatedInputTokens: Math.round(task.estimatedInputTokens * 0.85),
     estimatedOutputTokens: Math.round(task.estimatedOutputTokens * 0.8),
-    expectedCallsPerExecution: deterministic ? 0 : 1,
-    expectedRetryRate: task.id === "validate" ? 0.04 : 0.03,
-    cacheEligible: true,
-    cacheHitRate: 0.5,
-    recommendedExecutionMethod: deterministic ? "Deterministic routing and filtered retrieval" : "Selective model execution with schema validation",
+    expectedCallsPerExecution: calls(1),
+    expectedRetryRate: retries(1),
+    cacheHitRate: task.cacheEligible ? Math.max(task.cacheHitRate, 0.5) : 0,
+    recommendedExecutionMethod: deterministic ? "Deterministic routing and filtered retrieval" : "Selective execution using the edited model route",
   };
 }
 
@@ -974,173 +1106,214 @@ export function calculateUsageCostTrace({
 }
 
 export function getDemoSampleEstimate() {
-  const input = getDefaultProjectInput();
+  const input = getDemoProjectInput();
   return calculateCostTrace(makeWorkflowTasks(input), input, "balanced").monthlyCost ?? 0;
 }
 
-function makeWorkflowTasks(input: IntakeForm): WorkflowTask[] {
-  const baseScore = Math.max(5, Math.min(12, Math.round((input.executionsPerMonth || 1000) / 15000)));
+export function convertWorkloadToTokens(value: number, unit: WorkloadUnit): number {
+  const factors: Record<WorkloadUnit, number> = { tokens: 1, words: 1.33, pages: 500, characters: 0.25 };
+  return Math.round(Math.max(0, value) * factors[unit]);
+}
 
-  const tasks: WorkflowTask[] = [
-    {
-      id: "triage",
-      name: "Case triage",
-      purpose: "Classify the interaction and severity before any expensive work begins.",
-      taskType: "Classification",
-      inputDescription: "Customer message, history, and route metadata.",
-      outputDescription: "Priority, issue category, and required next step.",
-      complexity: "Low",
-      contextRequirement: "Low",
-      qualityRequirement: "High",
-      riskLevel: "Medium",
-      needsLLM: true,
-      recommendedExecutionMethod: "Deterministic pre-filtering plus small-model classification",
-      primaryProvider: "openai",
-      primaryModel: "gpt-4o-mini",
-      fallbackProvider: "anthropic",
-      fallbackModel: "claude-3-5-haiku",
-      promptStrategy: "Short classification schema with several examples and escalation rules.",
-      estimatedInputTokens: 2200,
-      estimatedOutputTokens: 180,
-      expectedCallsPerExecution: 1,
-      expectedRetryRate: 0.08,
-      cacheEligible: true,
-      cacheHitRate: 0.3,
-      humanReviewPolicy: "Human review for critical escalations and policy-sensitive categories.",
-      explanation:
-        "This step is frequent, bounded, and should be fast. A smaller model handles the classification at scale while deterministic logic keeps routing safe.",
-    },
-    {
-      id: "extract",
-      name: "Information extraction",
-      purpose: "Capture the customer issue, product details, and relevant account facts in a structured format.",
-      taskType: "Extraction",
-      inputDescription: "Support email, chat transcript, and account metadata.",
-      outputDescription: "Fields such as product, action, risk, and sentiment.",
-      complexity: "Medium",
-      contextRequirement: "Medium",
-      qualityRequirement: "High",
-      riskLevel: "Medium",
-      needsLLM: true,
-      recommendedExecutionMethod: "Structured output model with schema validation and retrieval cache",
-      primaryProvider: "azure-openai",
-      primaryModel: "gpt-4.1-mini",
-      fallbackProvider: "openai",
-      fallbackModel: "gpt-4o-mini",
-      promptStrategy: "Schema-first extraction with a compact policy context window.",
-      estimatedInputTokens: 5600,
-      estimatedOutputTokens: 420,
-      expectedCallsPerExecution: 1,
-      expectedRetryRate: 0.05,
-      cacheEligible: true,
-      cacheHitRate: 0.3,
-      humanReviewPolicy: "Review when output confidence is low or when field extraction is incomplete.",
-      explanation:
-        "Structured extraction is repeatable and benefits from a constrained schema and low output size. This prevents broad-context prompts from creating unnecessary cost.",
-    },
-    {
-      id: "policy",
-      name: "Policy retrieval",
-      purpose: "Fetch the relevant policy or playbook before drafting a response.",
-      taskType: "Retrieval",
-      inputDescription: "Search index, policy library, and issue context.",
-      outputDescription: "Most relevant clauses and decision boundaries.",
-      complexity: "Low",
-      contextRequirement: "High",
-      qualityRequirement: "High",
-      riskLevel: "High",
-      needsLLM: false,
-      recommendedExecutionMethod: "Search, semantic retrieval, and deterministic policy matching",
-      primaryProvider: "deterministic",
-      primaryModel: "Deterministic retrieval",
-      fallbackProvider: "deterministic",
-      fallbackModel: "Human review",
-      promptStrategy: "Rank and filter evidence before response generation.",
-      estimatedInputTokens: 3200,
-      estimatedOutputTokens: 300,
-      expectedCallsPerExecution: 2,
-      expectedRetryRate: 0.12,
-      cacheEligible: true,
-      cacheHitRate: 0.3,
-      humanReviewPolicy: "Human approval required for policy exceptions and customer-impacting decisions.",
-      explanation:
-        "Retrieval should be deterministic wherever possible. It narrows the model context to only the required policy facts and materially reduces token cost.",
-    },
-    {
-      id: "draft",
-      name: "Response generation",
-      purpose: "Draft a customer-safe response based on extracted facts and policy evidence.",
-      taskType: "Generation",
-      inputDescription: "Triage result, extracted facts, and relevant policy text.",
-      outputDescription: "Customer-facing response plus optional next-step suggestions.",
-      complexity: "Medium",
-      contextRequirement: "High",
-      qualityRequirement: "High",
-      riskLevel: "High",
-      needsLLM: true,
-      recommendedExecutionMethod: "Advanced model only for ambiguous or high-risk replies",
-      primaryProvider: "azure-openai",
-      primaryModel: "gpt-4.1-mini",
-      fallbackProvider: "azure-openai",
-      fallbackModel: "gpt-4.1",
-      promptStrategy: "Prompt-compressed context, explicit tone and policy guardrails, and output schema.",
-      estimatedInputTokens: 6400,
-      estimatedOutputTokens: 520,
-      expectedCallsPerExecution: 1,
-      expectedRetryRate: 0.06,
-      cacheEligible: true,
-      cacheHitRate: 0.3,
-      humanReviewPolicy: "Review all high-risk, legal, or escalated actions before sending.",
-      explanation:
-        "This is the business-visible step, but it should not consume broad context by default. The response should be generated from the narrow evidence set, not the full conversation.",
-    },
-    {
-      id: "validate",
-      name: "Escalation and compliance validation",
-      purpose: "Check for safety, quality, and policy exceptions before a response is approved.",
-      taskType: "Validation",
-      inputDescription: "Drafted response, policy checks, and risk indicators.",
-      outputDescription: "Approved, revised, or escalated status with reasons.",
-      complexity: "Medium",
-      contextRequirement: "Medium",
-      qualityRequirement: "Critical",
-      riskLevel: "High",
-      needsLLM: true,
-      recommendedExecutionMethod: "Deterministic rules with a targeted validation model for exceptions",
-      primaryProvider: "openai",
-      primaryModel: "gpt-4o-mini",
-      fallbackProvider: "azure-openai",
-      fallbackModel: "gpt-4.1",
-      promptStrategy: "Binary pass/fail validation output with explicit guardrails and escalation triggers.",
-      estimatedInputTokens: 4100,
-      estimatedOutputTokens: 220,
-      expectedCallsPerExecution: 1,
-      expectedRetryRate: 0.04,
-      cacheEligible: true,
-      cacheHitRate: 0.3,
-      humanReviewPolicy: "Escalate all critical or policy-sensitive exceptions to a human reviewer.",
-      explanation:
-        "Validation is a good place for deterministic guardrails, with a smaller model used only where a second check is warranted. This limits expensive escalation calls.",
-    },
+type TaskSeed = [string, string, string, boolean, string, string];
+type GeneralWorkflowIntent = "agreement-review" | "record-summarisation" | "resource-optimisation" | "content-production" | "evidence-analysis";
+
+function classifyDomain(input: IntakeForm) {
+  const text = `${input.projectName} ${input.problemStatement} ${input.industry} ${input.sampleInput}`.toLowerCase();
+  if (/(payroll|tax calculation|withholding)/.test(text)) return "payroll";
+  if (/(adverse.event|pharma|pharmacovigilance|reportability)/.test(text)) return "pharma";
+  if (/(invoice|accounts.payable|ocr|purchase order)/.test(text)) return "invoice";
+  if (/(maintenance|sensor|equipment|industrial|technician)/.test(text)) return "maintenance";
+  if (/(account research|buying signal|sales research|stakeholder)/.test(text)) return "research";
+  if (/(support|customer service|ticket|contact centre)/.test(text)) return "support";
+  return "general";
+}
+
+function inferGeneralWorkflowIntent(input: IntakeForm): GeneralWorkflowIntent {
+  const text = `${input.projectName} ${input.problemStatement} ${input.businessOutcome} ${input.currentProcess} ${input.sampleInput}`.toLowerCase();
+  if (/(contract|agreement|clause|obligation|terms|redline|legal review|policy comparison)/.test(text)) return "agreement-review";
+  if (/(clinical note|medical record|patient chart|encounter note|case note|progress note|summari[sz]e.*record|record.*summari[sz])/.test(text)) return "record-summarisation";
+  if (/(schedule|roster|allocation|assign|capacity plan|shift|timetable|resource constraint|availability)/.test(text)) return "resource-optimisation";
+  if (/(campaign|marketing|content|creative|copy|brand|publish|channel variant)/.test(text)) return "content-production";
+  return "evidence-analysis";
+}
+
+function generalTaskSeeds(input: IntakeForm): TaskSeed[] {
+  const subject = input.problemStatement || input.projectName || "the submitted work item";
+  const intent = inferGeneralWorkflowIntent(input);
+  if (intent === "agreement-review") {
+    return [
+      ["agreement-ingest", "Agreement structure and party extraction", "Extraction", true, "Extract parties, dates, definitions, clauses, and referenced schedules into a traceable structure.", "Legal review is required for unreadable or ambiguous language."],
+      ["clause-inventory", "Clause and obligation inventory", "Validation", false, "Map extracted clauses, obligations, dates, and missing provisions using versioned rules.", "Missing or conflicting obligations block completion."],
+      ["playbook-retrieval", "Approved playbook and precedent retrieval", "Retrieval", false, "Retrieve applicable negotiation positions, approved clauses, and jurisdiction-specific guidance.", "Only current approved legal sources may be used."],
+      ["deviation-analysis", "Contract deviation and risk analysis", "Generation", true, "Compare agreement language with retrieved positions and explain material deviations with clause citations.", "The model cannot make a binding legal determination."],
+      ["legal-approval", "Legal decision and redline approval gate", "Routing", false, "Route cited deviations and proposed actions to the accountable legal reviewer.", "An authorised legal reviewer owns every acceptance or redline decision."],
+    ];
+  }
+  if (intent === "record-summarisation") {
+    return [
+      ["record-normalize", "Source-record normalization", "Extraction", true, "Extract dated observations, actions, measurements, and attributed statements without inventing missing facts.", "Low-confidence or conflicting source text requires reviewer inspection."],
+      ["timeline-assemble", "Chronology and provenance assembly", "Calculation", false, "Order extracted events deterministically and preserve source locations and authorship.", "Conflicting timestamps remain explicit rather than inferred."],
+      ["terminology-check", "Terminology and identifier validation", "Validation", false, "Validate controlled terms, identifiers, units, and required note sections.", "Invalid identifiers or units block the summary."],
+      ["record-summary", "Longitudinal record summarisation", "Generation", true, "Summarise the validated chronology with source attribution and no diagnosis or unsupported conclusion.", "A qualified domain reviewer approves the summary before use."],
+      ["review-signoff", "Qualified-reviewer sign-off", "Routing", false, "Route the source-linked summary and unresolved conflicts to the accountable reviewer.", "The generated summary cannot replace professional judgement."],
+    ];
+  }
+  if (intent === "resource-optimisation") {
+    return [
+      ["demand-input", "Demand and availability intake", "Extraction", false, `Normalize demand, availability, and constraints for ${input.projectName}.`, "Review missing availability or demand."],
+      ["constraint-check", "Constraint and eligibility validation", "Validation", false, "Apply hard constraints, eligibility rules, and conflicts deterministically.", "Block infeasible assignments."],
+      ["schedule-optimize", "Schedule and allocation optimization", "Calculation", false, "Use a deterministic optimization solver with explicit objectives.", "Human owner approves exceptions and objective trade-offs."],
+      ["exception-explain", "Optimization exception explanation", "Generation", true, "Explain solver results and unresolved conflicts without changing assignments.", "Explanations cannot override solver constraints."],
+      ["publish-gate", "Allocation approval and publish gate", "Validation", false, "Require approval and version the published allocation.", "Only an authorised owner may publish."],
+    ];
+  }
+  if (intent === "content-production") {
+    return [
+      ["brief-check", "Content brief validation", "Validation", false, `Validate objectives, audience, channels, and claims for ${input.projectName}.`, "Incomplete or prohibited claims block drafting."],
+      ["audience-evidence", "Audience and source evidence retrieval", "Retrieval", false, "Retrieve approved facts, audience research, and brand rules.", "Stale or unapproved evidence cannot be used."],
+      ["content-draft", "Channel-specific content drafting", "Generation", true, "Draft channel variants from the approved brief and evidence.", "Human owner reviews every publishable draft."],
+      ["publication-check", "Claim, policy, and format validation", "Validation", false, "Apply deterministic claim, disclosure, phrase, and channel checks.", "Failed checks block publication."],
+      ["content-approval", "Content approval handoff", "Routing", false, "Route variants to accountable channel and policy owners.", "No autonomous publication."],
+    ];
+  }
+  const seeds: TaskSeed[] = [
+    ["request-normalize", "Request and evidence normalization", "Routing", false, `Validate the requested analysis, evidence boundaries, and output obligations for ${subject}.`, "Escalate incomplete or high-risk requests."],
   ];
-  return tasks.map((task, index) => ({
-    ...task,
-    complexity: task.complexity,
-    qualityRequirement: task.qualityRequirement,
-    contextRequirement: task.contextRequirement,
-    cacheHitRate: task.cacheEligible ? 0.3 : 0,
-    estimatedInputTokens: task.estimatedInputTokens + baseScore * index * 120,
-    estimatedOutputTokens: task.estimatedOutputTokens + baseScore * (index + 1) * 30,
-  }));
+  if (input.attachedDocuments > 0) seeds.push(["source-extract", "Source-document fact extraction", "Extraction", true, "Extract traceable project facts from supplied sources.", "Review unreadable, conflicting, or low-confidence fields."]);
+  if (input.citations || input.retrievedPassages > 0) seeds.push(["evidence-retrieve", "Authoritative evidence retrieval", "Retrieval", false, "Retrieve approved, relevant, and traceable sources.", "Block unsupported conclusions."]);
+  seeds.push(["evidence-synthesis", "Evidence-grounded analysis", "Generation", true, "Synthesize the requested analysis from validated evidence without expanding the decision scope.", "Human approval is required for consequential outcomes."]);
+  if (input.structuredOutput) seeds.push(["result-validate", "Result schema and claim validation", "Validation", false, "Apply output-schema, citation, risk, and completeness rules.", "Reject invalid, unsupported, or incomplete output."]);
+  seeds.push(["decision-route", "Accountable decision routing", "Routing", false, "Route the validated result and exceptions to the accountable owner.", input.humanReview ? "Human approval is mandatory." : "Human review is required for exceptions."]);
+  return seeds;
+}
+
+function domainTaskSeeds(domain: ReturnType<typeof classifyDomain>, input: IntakeForm): TaskSeed[] {
+  if (domain === "general") return generalTaskSeeds(input);
+  const profiles: Record<string, TaskSeed[]> = {
+    support: [
+      ["intake-route", "Contact routing", "Routing", false, "Route metadata and explicit priority rules.", "Escalate safety, legal, and policy exceptions."],
+      ["fact-extraction", "Case fact extraction", "Extraction", true, "Extract issue facts into a strict schema.", "Review low-confidence or incomplete fields."],
+      ["policy-retrieval", "Policy evidence retrieval", "Retrieval", false, "Retrieve and rank approved policy sources.", "Require source identifiers for every policy claim."],
+      ["response-draft", "Grounded response drafting", "Generation", true, "Draft from extracted facts and retrieved evidence only.", "Review high-risk or customer-impacting responses."],
+      ["response-validation", "Response and escalation validation", "Validation", false, "Apply policy, privacy, and escalation rules.", "Block failed checks and route to a specialist."],
+    ],
+    pharma: [
+      ["case-intake", "Adverse-event case intake", "Extraction", true, "Extract reporter, patient, product, event, and dates without inferring missing facts.", "Mandatory pharmacovigilance specialist review."],
+      ["completeness", "Minimum-criteria completeness check", "Validation", false, "Apply deterministic minimum-case criteria and duplicate checks.", "Mandatory specialist gate for incomplete or ambiguous cases."],
+      ["evidence", "Label and procedure evidence retrieval", "Retrieval", false, "Retrieve controlled labels, SOPs, and source citations.", "Citations required; stale or absent sources block progression."],
+      ["narrative", "Source-grounded case narrative", "Generation", true, "Summarise reported facts without deciding regulatory reportability.", "Mandatory specialist approval before use."],
+      ["reportability-gate", "Reportability decision gate", "Validation", false, "Reserve reportability and submission decisions for authorised specialists.", "No autonomous reportability decision."],
+    ],
+    invoice: [
+      ["document-capture", "Invoice OCR and field extraction", "Extraction", true, "Extract supplier, totals, tax, dates, and line items with confidence.", "Review unreadable or low-confidence documents."],
+      ["master-data", "Supplier and purchase-order match", "Validation", false, "Match approved supplier, PO, receipt, and bank data deterministically.", "Block unmatched or changed payment details."],
+      ["arithmetic", "Totals and tax validation", "Calculation", false, "Recalculate totals, tax, currency, and tolerances using rules.", "Route exceptions to accounts payable."],
+      ["exception-summary", "Exception explanation", "Generation", true, "Explain deterministic validation failures using supplied evidence.", "Human approval for payment exceptions."],
+      ["approval-route", "Approval routing", "Routing", false, "Apply amount, cost-centre, segregation, and authority rules.", "Never release payment without required approvals."],
+    ],
+    maintenance: [
+      ["signal-check", "Sensor and event validation", "Validation", false, "Validate timestamps, ranges, missing signals, and alarm codes.", "Unsafe or corrupt telemetry blocks automated advice."],
+      ["history-retrieval", "Maintenance history retrieval", "Retrieval", false, "Retrieve equipment manuals, work orders, and recent failure history.", "Require asset-specific sources and freshness."],
+      ["diagnosis", "Candidate diagnosis synthesis", "Generation", true, "Rank possible causes from validated signals and maintenance evidence.", "Human technician approval is mandatory."],
+      ["safety-gate", "Safety and lockout gate", "Validation", false, "Apply safety, lockout, operating-envelope, and escalation rules.", "Block any recommendation that conflicts with safety controls."],
+      ["work-order", "Technician work-order draft", "Generation", true, "Draft checks and parts for technician review, not autonomous action.", "Technician approves every recommended intervention."],
+    ],
+    research: [
+      ["source-plan", "Research source plan", "Routing", false, "Select approved internal and external sources with freshness windows.", "Exclude disallowed or stale sources."],
+      ["account-retrieval", "Account evidence retrieval", "Retrieval", false, "Retrieve CRM, filings, news, and product evidence with timestamps.", "Every material claim requires a citation and freshness date."],
+      ["entity-resolution", "Entity and stakeholder resolution", "Validation", false, "Resolve organisations and people deterministically where possible.", "Review ambiguous entity matches."],
+      ["synthesis", "Cited account synthesis", "Generation", true, "Synthesize buying signals, risks, initiatives, and gaps from cited evidence.", "Human review before outreach or account decisions."],
+      ["freshness-check", "Citation and freshness validation", "Validation", false, "Reject uncited, contradictory, or stale claims.", "Block publication when freshness requirements fail."],
+    ],
+    payroll: [
+      ["input-validation", "Payroll input validation", "Validation", false, "Validate jurisdiction, period, earnings, status, and required fields.", "Missing statutory inputs block calculation."],
+      ["rule-selection", "Effective tax-rule selection", "Retrieval", false, "Select versioned rules by jurisdiction and effective date.", "Only approved, dated rule sets may execute."],
+      ["tax-calculation", "Payroll tax calculation", "Calculation", false, "Execute deterministic statutory formulas with rounding and caps.", "LLMs must not calculate withholding or liability."],
+      ["reconciliation", "Calculation reconciliation", "Validation", false, "Recompute totals and compare against payroll controls.", "Material variances require payroll specialist review."],
+      ["explanation", "Employee-facing explanation", "Generation", true, "Optionally explain completed deterministic results without changing them.", "Human-approved templates and no calculation authority."],
+    ],
+  };
+  return profiles[domain];
+}
+
+function makeWorkflowTasks(input: IntakeForm): WorkflowTask[] {
+  const domain = classifyDomain(input);
+  const typicalTokens = Math.max(120, convertWorkloadToTokens(input.typicalInputValue, input.typicalInputUnit));
+  const highTokens = Math.max(typicalTokens, convertWorkloadToTokens(input.highInputValue, input.highInputUnit));
+  const outputTokens = Math.max(60, convertWorkloadToTokens(input.typicalOutputValue, input.typicalOutputUnit));
+  const retrievedTokens = input.retrievedPassages * input.tokensPerPassage;
+  const attachmentTokens = input.attachedDocuments * input.averageAttachmentPages * 700;
+  const conversationTokens = Math.max(0, input.averageConversationTurns - 1) * Math.round(typicalTokens * 0.35);
+  const normalContextTokens = typicalTokens + attachmentTokens + conversationTokens;
+  const peakContextTokens = highTokens + attachmentTokens + conversationTokens;
+  const capacityRetryPressure =
+    Math.max(0, input.peakVolumeMultiplier - 1) * 0.02 +
+    Math.max(0, input.peakConcurrency - 1) * 0.001 +
+    (input.targetResponseSeconds <= 5 ? 0.02 : input.targetResponseSeconds <= 15 ? 0.01 : 0);
+  const critical = input.qualitySensitivity === "critical" || input.dataSensitivity === "regulated";
+  return domainTaskSeeds(domain, input).map(([id, name, taskType, needsLLM, purpose, review], index) => {
+    const retrieval = taskType === "Retrieval";
+    const generation = taskType === "Generation";
+    const deterministic = !needsLLM;
+    const estimatedInputTokens = deterministic ? Math.max(80, Math.round(normalContextTokens * 0.25)) : Math.round((index % 2 ? peakContextTokens : normalContextTokens) + (retrieval || generation ? retrievedTokens : 0));
+    const attachmentBatches = taskType === "Extraction" ? Math.max(1, Math.ceil(input.attachedDocuments / 5)) : 1;
+    const turnCalls = generation ? 1 + Math.max(0, input.averageConversationTurns - 1) * 0.25 : 1;
+    return {
+      id,
+      name,
+      purpose,
+      taskType,
+      inputDescription: `${input.sampleInput || input.problemStatement} ${retrieval ? "Approved source corpus and metadata." : ""}`.trim(),
+      outputDescription: deterministic ? "Versioned decision record with evidence and rule outcomes." : "Schema-constrained result with confidence and evidence.",
+      complexity: critical || generation ? "High" : taskType === "Extraction" ? "Medium" : "Low",
+      contextRequirement: retrieval || generation ? "High" : "Medium",
+      qualityRequirement: critical ? "Critical" : input.qualitySensitivity === "high" ? "High" : "Standard",
+      riskLevel: critical || /safety|reportability|tax|payment/.test(`${name} ${purpose}`.toLowerCase()) ? "High" : "Medium",
+      needsLLM,
+      recommendedExecutionMethod: deterministic ? "Deterministic rules, retrieval, or calculation — no model call" : "Selective model assistance with schema validation",
+      primaryProvider: deterministic ? "deterministic" : "azure-openai",
+      primaryModel: deterministic ? (retrieval ? "Deterministic retrieval" : "Deterministic execution") : generation && critical ? "gpt-4.1" : "gpt-4.1-mini",
+      fallbackProvider: deterministic ? "deterministic" : "openai",
+      fallbackModel: deterministic ? "Human review" : "gpt-4o-mini",
+      promptStrategy: deterministic ? purpose : `${purpose} Use only supplied evidence; return compact structured output.`,
+      estimatedInputTokens,
+      estimatedOutputTokens: deterministic ? 0 : Math.max(80, Math.round(outputTokens * (generation ? 1 : 0.45))),
+      expectedCallsPerExecution: deterministic ? 0 : Number((attachmentBatches * turnCalls).toFixed(2)),
+      expectedRetryRate: deterministic ? 0 : Math.min(0.5, Number(((critical ? 0.08 : 0.04) + capacityRetryPressure).toFixed(4))),
+      cacheEligible: Boolean(retrievedTokens) || input.cachedContextPercent > 0,
+      cacheHitRate: Math.min(0.9, input.cachedContextPercent / 100),
+      humanReviewPolicy: review,
+      explanation: deterministic ? "This task is more reliable and auditable as versioned deterministic execution." : "Model assistance is limited to an evidence-grounded language or extraction task.",
+    };
+  });
 }
 
 export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Date.now()}`): Project {
   const cleaned = intakeSchema.parse(form);
   const months = Math.max(1, cleaned.executionsPerMonth || 1000);
   const tasks = makeWorkflowTasks(cleaned);
+  const domain = classifyDomain(cleaned);
+  const domainLabels: Record<typeof domain, string> = {
+    support: "Customer-support operations",
+    pharma: "Regulated adverse-event intake",
+    invoice: "Accounts-payable document processing",
+    maintenance: "Safety-aware industrial maintenance",
+    research: "Citation-grounded account research",
+    payroll: "Deterministic payroll tax calculation",
+    general: "General enterprise workflow",
+  };
+  const deterministicCount = tasks.filter((task) => !task.needsLLM).length;
+  const suitability: NonNullable<Project["suitability"]> = domain === "payroll"
+    ? { classification: "deterministic", label: "Primarily deterministic automation", rationale: ["Statutory calculations require versioned rules and exact arithmetic.", "Language-model use is limited to optional explanation after calculation."] }
+    : !cleaned.sampleInput || !cleaned.businessOutcome
+      ? { classification: "not-ready", label: "Not currently suitable without better data or controls", rationale: ["A representative sample and measurable outcome are required before model-assisted design."] }
+      : deterministicCount >= Math.ceil(tasks.length * 0.6)
+        ? { classification: "selected-stages", label: "Suitable only for selected workflow stages", rationale: ["Most stages have stronger deterministic controls.", "Model assistance is reserved for bounded extraction, synthesis, or explanation."] }
+        : { classification: "generative-ai", label: "Suitable for generative AI with controls", rationale: ["The workflow contains evidence-grounded language tasks.", "Deterministic validation and human escalation remain required."] };
 
   const spine: WorkloadSpine = {
-    workloadCategory: cleaned.problemStatement.toLowerCase().includes("support") ? "Customer operations automation" : "Knowledge-intensive workflow",
+    workloadCategory: domainLabels[domain],
     overallComplexity: cleaned.executionsPerMonth > 80000 ? "High" : "Medium",
     reasoningDepth: cleaned.qualitySensitivity === "critical" ? "Deep" : cleaned.qualitySensitivity === "high" ? "Medium" : "Light",
     contextIntensity: cleaned.conversationHistory || cleaned.attachedDocuments > 2 ? "High" : "Medium",
@@ -1151,17 +1324,14 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
     volumeProfile: months > 50000 ? "High-volume" : months > 10000 ? "Medium-volume" : "Low-volume",
     hallucinationImpact: cleaned.qualitySensitivity === "critical" ? "High" : "Medium",
     humanReviewNeed: cleaned.humanReview ? "Required for exceptions" : "Optional",
-    deterministicControls: [
-      "Policy and routing rules",
-      "Schema validation",
-      "Retrieval before generation",
-      "Human escalation for high-risk decisions",
-    ],
-    mvpWedge: "Route, enrich, and validate before generation",
+    deterministicControls: Array.from(new Set(tasks.filter((task) => !task.needsLLM).map((task) => task.name).concat(["Schema validation", "Explicit human escalation"]))),
+    mvpWedge: `${tasks[0]?.name ?? "Validate inputs"} before ${tasks.find((task) => task.needsLLM)?.name ?? "deterministic execution"}`,
     why: [
-      "The workload is frequent and operations-heavy, so routing cost and human review matter as much as model choice.",
-      "Deterministic controls are stronger than a single premium model for high-volume, structured support work.",
-      "The recommended route narrows the model to the decision that actually adds value.",
+      suitability.label,
+      `${deterministicCount} of ${tasks.length} workflow stages are deterministic and are not billed model calls.`,
+      `Capacity basis: ${cleaned.executionsPerMonth.toLocaleString()} monthly executions × ${cleaned.peakVolumeMultiplier} peak multiplier at ${cleaned.peakConcurrency} concurrent requests, with a ${cleaned.targetResponseSeconds}s response target.`,
+      `Context basis: ${cleaned.attachedDocuments} attachments × ${cleaned.averageAttachmentPages} pages, ${cleaned.averageConversationTurns} conversation turns, and ${cleaned.cachedContextPercent}% reusable context.`,
+      cleaned.humanReview ? "The supplied governance posture requires an explicit human approval boundary." : "Human review remains an exception path for unsupported or high-risk outcomes.",
     ],
   };
 
@@ -1299,9 +1469,9 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
   }));
 
   const prompts: PromptPackItem[] = tasks.map((task) => {
-    const originalPrompt = `Generate ${task.name.toLowerCase()} for this case without additional constraints.`;
+    const originalPrompt = `Complete ${task.name.toLowerCase()} for ${cleaned.problemStatement}.`;
     const taskGuidance: Record<string, string> = {
-      Classification: "Allowed taxonomy: billing, access, product, delivery, policy, other. Return confidence and escalate below 0.80.",
+      Classification: "Use the project-defined taxonomy. Return confidence and escalate below the approved threshold.",
       Extraction: "Return required fields, optional fields, evidence spans and null for missing values. Never invent values.",
       Retrieval: "Build the query, apply metadata filters, retrieve top-k=5, rerank, deduplicate and return source identifiers. No generation prompt is required.",
       Generation: "Use retrieved evidence only. Follow tone, maximum length, citation and unsupported-answer rules.",
@@ -1328,9 +1498,9 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
     return {
       id: task.id,
       taskName: task.name,
-      systemInstruction: `You are evaluating ${task.taskType.toLowerCase()} work for a ${cleaned.industry || "enterprise"} workflow. Use only the provided evidence.`,
+      systemInstruction: `You are performing ${task.taskType.toLowerCase()} for ${cleaned.projectName} in ${cleaned.industry || "an enterprise workflow"}. Use only the provided evidence.`,
       taskPrompt: optimisedPrompt,
-      expectedInputPlaceholders: ["customer_message", "policy_context", "account_metadata"],
+      expectedInputPlaceholders: ["workflow_input", "authoritative_evidence", "structured_metadata"],
       outputSchema: task.needsLLM ? '{ "status": "ok|needs_review|blocked", "confidence": 0, "result": "...", "evidence": [] }' : "Retrieval record: query, filters, ranked sources, deduplicated context.",
       contextInclusionStrategy: "Include only task-relevant policy excerpts, structured metadata, and the current interaction state.",
       contextExclusionStrategy: "Exclude duplicate history, full transcript noise, and irrelevant archives.",
@@ -1338,7 +1508,7 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
       validationRules: ["Reject fabricated facts", "Require evidence when policy is ambiguous", "Escalate risky decisions"],
       retryGuidance: "Retry only when a schema or guardrail failure occurs.",
       fallbackCriteria: "Use the fallback model only when the original model fails schema validation or the task is high-risk.",
-      humanEscalationCriteria: "Escalate when the decision could materially affect policy, billing, or customer safety.",
+      humanEscalationCriteria: task.humanReviewPolicy,
       originalPrompt,
       optimisedPrompt,
       changes: [task.needsLLM ? "Added task-specific contract" : "Made retrieval controls explicit", "Confined context to the task", "Added validation and escalation rules"],
@@ -1373,7 +1543,7 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
     name: cleaned.projectName || "New BuildWise project",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    demoMode: true,
+    demoMode: projectId === "demo-support-project",
     input: cleaned,
     spine,
     tasks,
@@ -1384,6 +1554,9 @@ export function buildProjectFromForm(form: IntakeForm, projectId = `project-${Da
     calibration: { inputMultiplier: 1, outputMultiplier: 1, sampleCount: 0 },
     buildPaths: deriveBuildPaths(cleaned, tasks),
     recommendedBuildPath: cleaned.builderPreference === "low-code" ? "low-code" : cleaned.builderPreference === "architecture" ? "hybrid" : "pro-code",
+    kind: projectId === "demo-support-project" ? "demo" : "generated",
+    schemaVersion: 2,
+    suitability,
   };
 }
 
@@ -1401,7 +1574,7 @@ export function deriveBuildPaths(input: IntakeForm, tasks: WorkflowTask[]): Buil
 }
 
 export function buildDemoProject(): Project {
-  const project = buildProjectFromForm(getDefaultProjectInput(), "demo-support-project");
+  const project = buildProjectFromForm(getDemoProjectInput(), "demo-support-project");
   return {
     ...project,
     demoMode: true,
@@ -1411,11 +1584,27 @@ export function buildDemoProject(): Project {
 
 export function recalculateProjectFromTasks(project: Project, tasks: WorkflowTask[]): Project {
   const rebuilt = buildProjectFromForm(project.input, project.id);
+  const traces = calculateScenarioTraces(tasks, project.input);
+  const scenarios = rebuilt.scenarios.map((scenario) => {
+    const trace = traces[scenario.id];
+    return {
+      ...scenario,
+      monthlyCost: trace.monthlyCost ?? 0,
+      dailyCost: (trace.monthlyCost ?? 0) / 30,
+      estimatedCostPerExecution: trace.costPerExecution ?? 0,
+      inputTokens: trace.totalInputTokensPerExecution,
+      cachedTokens: trace.totalCachedInputTokensPerExecution,
+      outputTokens: trace.totalOutputTokensPerExecution,
+      modelCalls: trace.expectedCallsPerExecution,
+      savingsVsBaseline: trace.savingsVsBaseline ?? 0,
+      costTrace: { ...scenario.costTrace!, tasks: trace.tasks, monthlyExecutions: trace.monthlyExecutions, callsPerExecution: trace.expectedCallsPerExecution },
+    };
+  });
   return {
     ...project,
     updatedAt: new Date().toISOString(),
     tasks,
-    scenarios: rebuilt.scenarios,
+    scenarios,
     prompts: rebuilt.prompts.map((prompt) => {
       const task = tasks.find((item) => item.id === prompt.id);
       return task ? { ...prompt, taskName: task.name } : prompt;

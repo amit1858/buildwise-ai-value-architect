@@ -1,35 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { buildDemoProject, buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
+import { buildProjectFromForm, formatCost, formatMoney, getProjectNavigationSections, getRoutingPatchForModel, modelCatalogue, recalculateProjectFromTasks, type ControlledTestRecord, type Project, type ScenarioMetric, type WorkflowTask } from "@/lib/buildwise";
 import { buildCompleteExportBundle, generateBuildArtifacts, generateCopilotInstructionsMarkdown, type BuildArtifact } from "@/lib/build-artifacts";
-import { deleteProject, getProjectById, saveProject } from "@/lib/project-store";
+import { deleteProject, saveProject } from "@/lib/project-store";
+import { loadProjectState, migrateLegacyBrowserState } from "@/lib/project-state";
+import { workspaceHref } from "@/lib/navigation";
 import { getSessionProvider, readSessionProviderSettings } from "@/lib/provider-session";
 import { executeProviderTest } from "@/lib/provider-adapters";
 import { ThemeControl } from "@/components/ThemeControl";
 
 export function WorkspaceShell({ projectId, section, publicDemo = false }: { projectId: string; section: string; publicDemo?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const effectiveProjectId = projectId === "local" ? searchParams.get("project") ?? "" : projectId;
   const [project, setProject] = useState<Project | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>("balanced");
   const [lastTest, setLastTest] = useState<ControlledTestRecord | null>(null);
   const [notice, setNotice] = useState<{ tone: "info" | "error" | "success"; message: string } | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const loaded = getProjectById(projectId) ?? (projectId === "demo-support-project" ? buildDemoProject() : null);
+    migrateLegacyBrowserState();
+    const result = loadProjectState(effectiveProjectId);
+    const loaded = result.ok ? result.state.project : null;
     queueMicrotask(() => {
       setProject(loaded);
+      setLoadError(result.ok && !loaded ? "This project is still a draft. Continue its intake before opening the workspace." : result.ok ? "" : result.message);
       setLastTest(loaded?.testRuns?.at(-1) ?? null);
+      setLoaded(true);
     });
-  }, [projectId]);
+  }, [effectiveProjectId]);
 
   const activeSection = section || "spine";
   const estimate = useMemo(() => project?.scenarios.find((item) => item.id === selectedScenario) ?? project?.scenarios[2] ?? null, [project, selectedScenario]);
 
+  if (!loaded) return <main className="bw-page p-10 text-stone-700">Loading browser-local project…</main>;
   if (!project) {
-    return <main className="bw-page p-10 text-stone-700">Project not found.</main>;
+    return <main className="bw-page p-10 text-stone-700"><h1 className="text-2xl font-semibold">Project unavailable</h1><p className="mt-3">{loadError || "Project not found in this browser."}</p><Link href="/" className="bw-action-primary mt-5 inline-block">Return home</Link></main>;
   }
 
   const updateProject = (updater: (current: Project) => Project) => {
@@ -41,6 +52,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
   };
 
   const handleDelete = () => {
+    if (!window.confirm(`Reset and delete only “${project.name}”?`)) return;
     deleteProject(project.id);
     router.push("/");
   };
@@ -65,7 +77,7 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
       mode: mode === "demo" ? "mock" as const : mode === "mocked-byok" ? "mock" as const : "live" as const,
     };
     let result: { providerId: string; model: string; content: string; inputTokens: number; outputTokens: number; cachedTokens: number; latencyMs: number; finishReason: string; actualCost: number | null; projectedMonthlyCost: number | null; pricingSource: string; provenance: "demo-simulation" | "mock-adapter" | "live-provider"; isStructuredValid: boolean; warnings: string[] };
-    if (publicDemo && mode === "demo") {
+    if (mode === "demo") {
       result = { ...await executeProviderTest(demoProvider, request), provenance: "demo-simulation" };
     } else {
       const response = await fetch("/api/providers/test", {
@@ -117,14 +129,14 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">BuildWise</div>
               <div className="mt-1 text-lg font-semibold text-stone-900">{project.name}</div>
             </div>
-            <button onClick={handleDelete} className="rounded-full border border-stone-200 px-2 py-1 text-xs text-stone-600 hover:border-stone-400">Delete</button>
+            <button type="button" onClick={handleDelete} className="rounded-full border border-stone-200 px-2 py-1 text-xs text-stone-600 hover:border-stone-400">Reset project</button>
           </div>
 
           <nav className="workspace-section-nav space-y-2">
             {getProjectNavigationSections().map((item) => (
               <Link
                 key={item.id}
-                href={`/workspace/${project.id}/${item.href}`}
+                href={workspaceHref(project.id, item.href)}
                 className={activeSection === item.href ? "flex items-center justify-between rounded-xl bg-stone-900 px-3 py-2.5 text-sm font-medium text-white" : "flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm font-medium text-stone-700 hover:border-stone-400"}
               >
                 <span>{item.label}</span>
@@ -148,9 +160,9 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
             </div>
             <div className="flex flex-wrap gap-3">
               <ThemeControl />
-              <button onClick={() => updateProject((current) => ({ ...current, name: current.name }))} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500">Preset: demo</button>
-              <Link href="/settings/providers" className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500">Providers</Link>
-              <button onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">Export blueprint</button>
+              <span className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">{project.kind === "demo" ? "Seeded demo" : "Browser-local project"}</span>
+              {!publicDemo && <Link href="/settings/providers" className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-stone-500">Providers</Link>}
+              <button type="button" onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">Export blueprint</button>
             </div>
           </header>
 
@@ -222,11 +234,11 @@ export function WorkspaceShell({ projectId, section, publicDemo = false }: { pro
 function SuitabilityPanel({ project }: { project: Project }) {
   const deterministic = project.tasks.filter((task) => !task.needsLLM).length;
   const human = project.tasks.filter((task) => task.humanReviewPolicy !== "Never").length;
-  const classification = project.input.qualitySensitivity === "critical" || project.input.dataSensitivity === "regulated" ? "Hybrid AI plus human review" : deterministic >= 2 ? "Search/retrieval with selective language-model assistance" : "General-purpose language model with governance controls";
+  const classification = project.suitability?.label ?? "Suitability requires review";
   return <div className="space-y-6">
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI suitability assessment</div><h3 className="mt-3 text-2xl font-semibold text-stone-900">{classification}</h3><p className="mt-3 max-w-3xl text-sm leading-6 text-stone-600">BuildWise separates deterministic rules, retrieval, model-assisted work, and human decisions before selecting a model or build path.</p></div>
     <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Deterministic tasks" value={`${deterministic} of ${project.tasks.length}`} /><MetricCard label="Human-review gates" value={`${human} of ${project.tasks.length}`} /><MetricCard label="Quality sensitivity" value={project.input.qualitySensitivity} /></div>
-    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-sm font-semibold text-stone-900">Decision rule</div><p className="mt-2 text-sm leading-6 text-stone-600">Use deterministic execution where confidence is high, retrieval before generation, and explicit human review for consequential outcomes. Model choice follows the task contract rather than the other way around.</p></div>
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="text-sm font-semibold text-stone-900">Decision rule</div><ul className="mt-2 space-y-2 text-sm leading-6 text-stone-600">{(project.suitability?.rationale ?? ["Use deterministic execution where exact rules exist."]).map((reason) => <li key={reason}>• {reason}</li>)}</ul></div>
   </div>;
 }
 
@@ -262,14 +274,14 @@ function BuildKitPanel({ project, estimate }: { project: Project; estimate: Scen
         <h3 className="mt-3 text-2xl font-semibold text-stone-900">Project artifact pack</h3>
         <p className="mt-2 text-sm leading-6 text-stone-600">Each artifact is generated from the current project state, selected scenario, and recommended build path. Public-demo exports remain credential-free.</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <button onClick={() => navigator.clipboard?.writeText(selectedArtifact.content)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Copy selected artifact</button>
-          <button onClick={() => downloadBlob(selectedArtifact.content, selectedArtifact.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download selected artifact</button>
-          <button onClick={() => downloadBlob(exportBundle.combinedMarkdown, exportBundle.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download complete Build Kit</button>
-          <button onClick={() => downloadBlob(generateCopilotInstructionsMarkdown(project), ".github/copilot-instructions.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download .github/copilot-instructions.md</button>
-          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "github-copilot-agent-prompt")?.content ?? "", "13-github-copilot-agent-prompt.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download GitHub Copilot prompt</button>
-          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "low-code-implementation-guide")?.content ?? "", "14-low-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Low-code guide</button>
-          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "pro-code-implementation-guide")?.content ?? "", "15-pro-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Pro-code guide</button>
-          <button onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "hybrid-responsibility-map")?.content ?? "", "16-hybrid-responsibility-map.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Hybrid responsibility map</button>
+          <button type="button" onClick={() => navigator.clipboard?.writeText(selectedArtifact.content)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Copy selected artifact</button>
+          <button type="button" onClick={() => downloadBlob(selectedArtifact.content, selectedArtifact.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download selected artifact</button>
+          <button type="button" onClick={() => downloadBlob(exportBundle.combinedMarkdown, exportBundle.fileName)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download complete Build Kit</button>
+          <button type="button" onClick={() => downloadBlob(generateCopilotInstructionsMarkdown(project), ".github/copilot-instructions.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download .github/copilot-instructions.md</button>
+          <button type="button" onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "github-copilot-agent-prompt")?.content ?? "", "13-github-copilot-agent-prompt.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Download GitHub Copilot prompt</button>
+          <button type="button" onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "low-code-implementation-guide")?.content ?? "", "14-low-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Low-code guide</button>
+          <button type="button" onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "pro-code-implementation-guide")?.content ?? "", "15-pro-code-implementation-guide.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Pro-code guide</button>
+          <button type="button" onClick={() => downloadBlob(artifacts.find((artifact) => artifact.id === "hybrid-responsibility-map")?.content ?? "", "16-hybrid-responsibility-map.md")} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Hybrid responsibility map</button>
         </div>
       </div>
 
@@ -371,7 +383,7 @@ function WorkflowPanel({ project, onUpdate }: { project: Project; onUpdate: (pro
           </thead>
           <tbody>
             {project.tasks.map((task) => (
-              <tr key={task.id} className="border-b border-stone-200 align-top">
+              <tr key={task.id} data-testid={`task-row-${task.id}`} className="border-b border-stone-200 align-top">
                 <td className="py-4 pr-4 font-medium text-stone-900">
                   <button type="button" onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)} className="mr-2 rounded border border-stone-300 px-2 py-1 text-xs">{expandedTaskId === task.id ? "-" : "+"}</button>
                   <input aria-label={`${task.name} name`} value={task.name} onChange={(event) => updateTask(task.id, { name: event.target.value })} className="w-48 rounded border border-stone-200 bg-white px-2 py-1" />
@@ -393,13 +405,13 @@ function WorkflowPanel({ project, onUpdate }: { project: Project; onUpdate: (pro
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <label className="text-xs text-stone-600">Task type<select value={task.taskType} onChange={(event) => updateTask(task.id, { taskType: event.target.value })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm"><option>Classification</option><option>Extraction</option><option>Retrieval</option><option>Generation</option><option>Validation</option></select></label>
             <label className="text-xs text-stone-600">Execution method<input value={task.recommendedExecutionMethod} onChange={(event) => updateTask(task.id, { recommendedExecutionMethod: event.target.value })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
-            <label className="text-xs text-stone-600">Primary provider<input value={task.primaryProvider} onChange={(event) => updateTask(task.id, { primaryProvider: event.target.value as WorkflowTask["primaryProvider"] })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
-            <label className="text-xs text-stone-600">Primary model<select value={task.primaryModel} onChange={(event) => updateTask(task.id, { primaryModel: event.target.value, needsLLM: event.target.value !== "Deterministic retrieval" })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm"><option>Deterministic retrieval</option>{providerModels.map((model) => <option key={model}>{model}</option>)}</select></label>
+            <label className="text-xs text-stone-600">Primary provider<input data-testid="routing-primary-provider" value={task.primaryProvider} onChange={(event) => updateTask(task.id, { primaryProvider: event.target.value as WorkflowTask["primaryProvider"] })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
+            <label className="text-xs text-stone-600">Primary model<select data-testid="routing-primary-model" value={task.primaryModel} onChange={(event) => updateTask(task.id, getRoutingPatchForModel(task, event.target.value))} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm"><option>Deterministic retrieval</option><option>Deterministic execution</option>{providerModels.map((model) => <option key={model}>{model}</option>)}</select></label>
             <label className="text-xs text-stone-600">Fallback model<select value={task.fallbackModel} onChange={(event) => updateTask(task.id, { fallbackModel: event.target.value })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm"><option>Human review</option>{providerModels.map((model) => <option key={model}>{model}</option>)}</select></label>
-            <label className="text-xs text-stone-600">Input/context tokens<input type="number" min="0" value={task.estimatedInputTokens} onChange={(event) => updateTask(task.id, { estimatedInputTokens: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
+            <label className="text-xs text-stone-600">Input/context tokens<input data-testid="routing-input-tokens" type="number" min="0" value={task.estimatedInputTokens} onChange={(event) => updateTask(task.id, { estimatedInputTokens: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
             <label className="text-xs text-stone-600">Output tokens<input type="number" min="0" value={task.estimatedOutputTokens} onChange={(event) => updateTask(task.id, { estimatedOutputTokens: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
-            <label className="text-xs text-stone-600">Calls per execution<input type="number" min="0" step="0.1" value={task.expectedCallsPerExecution} onChange={(event) => updateTask(task.id, { expectedCallsPerExecution: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
-            <label className="text-xs text-stone-600">Retry rate<input type="number" min="0" max="1" step="0.01" value={task.expectedRetryRate} onChange={(event) => updateTask(task.id, { expectedRetryRate: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
+            <label className="text-xs text-stone-600">Calls per execution<input data-testid="routing-calls" type="number" min="0" step="0.1" value={task.expectedCallsPerExecution} onChange={(event) => updateTask(task.id, { expectedCallsPerExecution: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
+            <label className="text-xs text-stone-600">Retry rate<input data-testid="routing-retry-rate" type="number" min="0" max="1" step="0.01" value={task.expectedRetryRate} onChange={(event) => updateTask(task.id, { expectedRetryRate: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
             <label className="text-xs text-stone-600">Cache hit rate<input type="number" min="0" max="1" step="0.05" value={task.cacheHitRate} onChange={(event) => updateTask(task.id, { cacheHitRate: Number(event.target.value) })} className="mt-1 w-full rounded border border-stone-300 bg-white p-2 text-sm" /></label>
             <label className="flex items-center gap-2 pt-5 text-sm text-stone-700"><input type="checkbox" checked={task.cacheEligible} onChange={(event) => updateTask(task.id, { cacheEligible: event.target.checked })} /> Cache eligible</label>
           </div>
@@ -427,7 +439,7 @@ function ScenariosPanel({ project, selectedScenario, onSelect }: { project: Proj
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">{scenario.label}</div>
-                <div className="mt-2 text-xl font-semibold text-stone-900">{formatMoney(scenario.monthlyCost)}</div>
+                <div data-testid={`scenario-cost-${scenario.id}`} className="mt-2 text-xl font-semibold text-stone-900">{formatMoney(scenario.monthlyCost)}</div>
               </div>
               <div className="rounded-full bg-stone-100 px-2 py-1 text-xs font-medium text-stone-700">{scenario.confidence}</div>
             </div>
@@ -558,9 +570,9 @@ function TestPanel({ project, lastTest, publicDemo, onRun, onFeedback }: { proje
           <InfoLine label="Provider state" value={connected ? "Validated provider available" : "Demo mode only"} />
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
-          <button onClick={() => onRun(selectedTask.id, "demo")} className="rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 hover:border-stone-500">Run demo test</button>
-          {!publicDemo && <button onClick={() => onRun(selectedTask.id, "mocked-byok")} className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 hover:border-amber-500">Run mocked BYOK test</button>}
-          {publicDemo ? <><button type="button" disabled className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 disabled:cursor-not-allowed disabled:opacity-70">Live provider test</button><span className="max-w-md text-xs text-stone-500">Available in the server-hosted BuildWise application after configuring a provider. GitHub Pages never sends provider credentials.</span></> : <button onClick={() => onRun(selectedTask.id, "live-byok")} disabled={!connected} className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Run live provider test</button>}
+          <button type="button" onClick={() => onRun(selectedTask.id, "demo")} className="rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 hover:border-stone-500">Run demo test</button>
+          {!publicDemo && <button type="button" onClick={() => onRun(selectedTask.id, "mocked-byok")} className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 hover:border-amber-500">Run mocked BYOK test</button>}
+          {publicDemo ? <><button type="button" disabled className="rounded-full border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-medium text-amber-900 disabled:cursor-not-allowed disabled:opacity-70">Live provider test</button><span className="max-w-md text-xs text-stone-500">Available in the server-hosted BuildWise application after configuring a provider. GitHub Pages never sends provider credentials.</span></> : <button type="button" onClick={() => onRun(selectedTask.id, "live-byok")} disabled={!connected} className="rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-stone-400">Run live provider test</button>}
         </div>
         <div className="mt-4 text-xs text-stone-500">Every run is explicit. BuildWise never starts a paid call automatically.</div>
       </div>
@@ -582,7 +594,7 @@ function TestPanel({ project, lastTest, publicDemo, onRun, onFeedback }: { proje
             <InfoLine label="Finish reason" value={lastTest.finishReason} />
           </div>
           <div className="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700"><div className="font-medium text-stone-900">{lastTest.providerName}</div><div className="mt-2">{lastTest.output}</div><div className="mt-2 text-xs text-stone-500">{lastTest.warnings.join(" ") || "No warnings."}</div></div>
-          <div className="mt-5 flex flex-wrap items-center gap-2"><span className="mr-2 text-sm font-medium text-stone-800">Feedback</span><button onClick={() => onFeedback("accepted")} className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">Accepted</button><button onClick={() => onFeedback("revise")} className="rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Revise</button><button onClick={() => onFeedback("rejected")} className="rounded-full border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">Rejected</button>{lastTest.feedback && <span className="text-xs text-stone-500">Recorded: {lastTest.feedback}. Accepted samples recalibrate the estimate.</span>}</div>
+          <div className="mt-5 flex flex-wrap items-center gap-2"><span className="mr-2 text-sm font-medium text-stone-800">Feedback</span><button type="button" onClick={() => onFeedback("accepted")} className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">Accepted</button><button type="button" onClick={() => onFeedback("revise")} className="rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">Revise</button><button type="button" onClick={() => onFeedback("rejected")} className="rounded-full border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">Rejected</button>{lastTest.feedback && <span className="text-xs text-stone-500">Recorded: {lastTest.feedback}. Accepted samples recalibrate the estimate.</span>}</div>
         </div>
       )}
     </div>
@@ -602,10 +614,10 @@ function BlueprintPanel({ project, estimate }: { project: Project; estimate: Sce
           <InfoLine label="Initial control set" value={`${controls.length} initial controls`} />
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
-          <button onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Export JSON</button>
-          <button onClick={() => downloadBlueprintMarkdown(project, estimate)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Export Markdown</button>
-          <button onClick={() => window.print()} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Print / PDF view</button>
-          <button onClick={() => navigator.clipboard?.writeText(buildImplementationBrief(project, estimate))} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Copy implementation brief</button>
+          <button type="button" onClick={() => downloadBlueprint(project, estimate)} className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">Export JSON</button>
+          <button type="button" onClick={() => downloadBlueprintMarkdown(project, estimate)} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Export Markdown</button>
+          <button type="button" onClick={() => window.print()} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Print / PDF view</button>
+          <button type="button" onClick={() => navigator.clipboard?.writeText(buildImplementationBrief(project, estimate))} className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700">Copy implementation brief</button>
         </div>
       </div>
 
